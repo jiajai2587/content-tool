@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容优化与流量预测工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            }
+        }
+        
+        /* Markdown编辑器样式 */
+        #md-preview h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        #md-preview h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+        }
+        #md-preview h3 {
+            font-size: 1.125rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        #md-preview h4 {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        #md-preview p {
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        #md-preview ul {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        #md-preview ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        #md-preview li {
+            margin-bottom: 0.5rem;
+        }
+        #md-preview a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        #md-preview img {
+            margin: 1rem 0;
+        }
+        #md-preview code {
+            background-color: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+        #md-preview pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        #md-preview pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        #md-preview blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+            color: #6b7280;
+        }
+        #md-preview hr {
+            border: 0;
+            border-top: 1px solid #e5e7eb;
+            margin: 2rem 0;
+        }
+        #md-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        #md-preview table th {
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        #md-preview table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+        }
+        #md-preview del {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+        #md-preview u {
+            text-decoration: underline;
+        }
+        
+        /* 公众号模式样式 */
+        #md-preview.wechat-mode {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.75;
+        }
+        #md-preview.wechat-mode h1 {
+            font-size: 1.75rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        #md-preview.wechat-mode h2 {
+            font-size: 1.5rem;
+            margin: 1.25rem 0;
+        }
+        #md-preview.wechat-mode p {
+            margin-bottom: 1.25rem;
+            text-indent: 2em;
+        }
+        
+        /* 格式主题样式 */
+        #md-preview.format-byte {
+            background-color: #f0f9ff;
+            border-color: #bfdbfe;
+        }
+        #md-preview.format-alibaba {
+            background-color: #fff7ed;
+            border-color: #fdba74;
+        }
+        #md-preview.format-notebook {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            font-family: 'Courier New', monospace;
+        }
+        #md-preview.format-business {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            font-family: 'Arial', sans-serif;
+        }
+        #md-preview.format-japanese {
+            background-color: #fefce8;
+            border-color: #fbbf24;
+            font-family: 'MS Mincho', serif;
+        }
+        #md-preview.format-apple {
+            background-color: #f5f5f5;
+            border-color: #d1d5db;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        #md-preview.format-instagram {
+            background-color: #fafafa;
+            border-color: #e5e7eb;
+            font-family: 'Instagram Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        #md-preview.format-coil {
+            background-color: #fefefe;
+            border-color: #e5e7eb;
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 100% 1.5rem;
+        }
+        #md-preview.format-pop {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        #md-preview.format-art {
+            background-color: #fdf4ff;
+            border-color: #fbcfe8;
+            font-family: 'Georgia', serif;
+        }
+        #md-preview.format-glass {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        #md-preview.format-warm {
+            background-color: #fffbeb;
+            border-color: #fef3c7;
+            font-family: 'Georgia', serif;
+        }
+        #md-preview.format-minimal {
+            background-color: #f9fafb;
+            border-color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+        }
+        #md-preview.format-blackwhite {
+            background-color: #ffffff;
+            border-color: #000000;
+            font-family: 'Arial', sans-serif;
+        }
+        #md-preview.format-gradient {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-color: #e5e7eb;
+        }
+        #md-preview.format-xiaohongshu {
+            background-color: #fdf2f8;
+            border-color: #fbcfe8;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        #md-preview.format-dark {
+            background-color: #1e293b;
+            border-color: #334155;
+            color: #f8fafc;
+        }
+        #md-preview.format-typewriter {
+            background-color: #f5f5f5;
+            border-color: #d1d5db;
+            font-family: 'Courier New', monospace;
+        }
+        #md-preview.format-watercolor {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+            font-family: 'Georgia', serif;
+        }
+        #md-preview.format-chinese {
+            background-color: #fef3c7;
+            border-color: #fcd34d;
+            font-family: 'SimSun', serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-line-chart text-primary text-2xl"></i>
+                <h1 class="text-2xl font-bold text-dark">内容优化与流量预测工具</h1>
+            </div>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#content-optimizer" class="tab-link text-primary font-medium" data-tab="content-optimizer">内容优化</a></li>
+                    <li><a href="#hot榜" class="tab-link text-gray-600 hover:text-primary transition-colors" data-tab="hot榜">今日热榜</a></li>
+                    <li><a href="#markdown-editor" class="tab-link text-gray-600 hover:text-primary transition-colors" data-tab="markdown-editor">Markdown编辑器</a></li>
+                    <li><a href="#about" class="text-gray-600 hover:text-primary transition-colors">关于</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 内容优化 Tab -->
+        <div id="content-optimizer" class="tab-content">
+            <!-- 英雄区域 -->
+            <section class="bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl p-12 mb-12 text-center">
+                <h2 class="text-4xl font-bold mb-4 text-shadow">提升内容质量，预测流量表现</h2>
+                <p class="text-xl mb-8 max-w-3xl mx-auto">通过AI检测、人性化优化和流量预测，让你的内容快速进入流量池，提升阅读量40%以上！</p>
+                <button id="start-btn" class="bg-white text-primary font-bold py-3 px-8 rounded-full hover:bg-gray-100 transition-colors shadow-lg">
+                    开始优化
+                </button>
+            </section>
+
+            <!-- 操作区域 -->
+            <section class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <h2 class="text-2xl font-bold mb-6">内容分析与优化</h2>
+                
+                <!-- 标题输入 -->
+                <div class="mb-6">
+                    <label for="title" class="block text-gray-700 font-medium mb-2">输入你的标题</label>
+                    <input type="text" id="title" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入文章标题...">
+                </div>
+                
+                <!-- 内容输入 -->
+                <div class="mb-6">
+                    <label for="content" class="block text-gray-700 font-medium mb-2">输入你的内容</label>
+                    <textarea id="content" rows="8" class="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入文章内容..."></textarea>
+                </div>
+                
+                <!-- 内容类型选择 -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">内容类型</label>
+                    <select id="content-type" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="headline">头条号</option>
+                        <option value="wechat">公众号</option>
+                        <option value="seo">SEO文章</option>
+                        <option value="paper">论文</option>
+                    </select>
+                </div>
+                
+                <!-- 分析按钮 -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <button id="analyze-btn" class="flex-1 bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-analytics mr-2"></i> 开始分析
+                    </button>
+                    <button id="clear-btn" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fa fa-eraser mr-2"></i> 清空内容
+                    </button>
+                </div>
+                
+                <!-- 分析结果 -->
+                <div id="analysis-results" class="hidden">
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-xl font-bold mb-4">分析结果</h3>
+                        
+                        <!-- 结果概览 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">AI检测评分</h4>
+                                <p id="ai-score" class="text-2xl font-bold text-primary">-</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">流量预测</h4>
+                                <p id="traffic-prediction" class="text-2xl font-bold text-secondary">-</p>
+                            </div>
+                            <div class="bg-yellow-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">限流风险</h4>
+                                <p id="limit-risk" class="text-2xl font-bold text-warning">-</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">同质化程度</h4>
+                                <p id="homogenization" class="text-2xl font-bold text-danger">-</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">敏感违规风险</h4>
+                                <p id="sensitive-risk" class="text-2xl font-bold text-purple-600">-</p>
+                            </div>
+                            <div class="bg-indigo-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">营销文程度</h4>
+                                <p id="marketing-level" class="text-2xl font-bold text-indigo-600">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 详细分析 -->
+                        <div class="space-y-6">
+                            <!-- AI检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-brain text-primary mr-2"></i> AI检测详情
+                                </h4>
+                                <p id="ai-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 流量预测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-line-chart text-secondary mr-2"></i> 流量预测详情
+                                </h4>
+                                <p id="traffic-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 限流检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-exclamation-triangle text-warning mr-2"></i> 限流检测详情
+                                </h4>
+                                <p id="limit-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 敏感和违规检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-shield text-danger mr-2"></i> 敏感和违规检测详情
+                                </h4>
+                                <p id="sensitive-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 内容逻辑性检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-sitemap text-primary mr-2"></i> 内容逻辑性检测详情
+                                </h4>
+                                <p id="logic-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 营销文检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-bullhorn text-warning mr-2"></i> 营销文检测详情
+                                </h4>
+                                <p id="marketing-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 标题合规检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-check-square-o text-secondary mr-2"></i> 标题合规检测详情
+                                </h4>
+                                <p id="title-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- AI指数和文章得分 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- AI指数 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-2 flex items-center">
+                                        <i class="fa fa-brain text-primary mr-2"></i> AI指数
+                                    </h4>
+                                    <div class="flex items-center justify-center">
+                                        <div id="ai-index-chart" class="w-40 h-40 relative">
+                                            <!-- 饼图将通过JavaScript生成 -->
+                                        </div>
+                                        <div class="ml-4">
+                                            <p id="ai-index-value" class="text-2xl font-bold text-primary">58%</p>
+                                            <p class="text-sm text-gray-600">AI生成占比</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 文章得分 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-2 flex items-center">
+                                        <i class="fa fa-star text-warning mr-2"></i> 文章得分
+                                    </h4>
+                                    <div class="flex items-center justify-center">
+                                        <div id="content-score-chart" class="w-40 h-40 relative">
+                                            <!-- 环形图将通过JavaScript生成 -->
+                                        </div>
+                                        <div class="ml-4">
+                                            <p id="content-score-value" class="text-2xl font-bold text-secondary">90</p>
+                                            <p class="text-sm text-gray-600">综合评分</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 新增检测功能 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <!-- AI内容深度状态和限流指数 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">AI内容深度状态</h4>
+                                    <p id="ai-depth-status" class="text-green-600 font-medium mb-2">满足发布条件</p>
+                                    <h4 class="font-bold mb-3">限流指数</h4>
+                                    <div class="space-y-2">
+                                        <p><span class="font-medium">限流指数:</span> <span id="limit-index">30%</span></p>
+                                        <p><span class="font-medium">限流状态:</span> <span id="limit-status" class="text-green-600">安全</span></p>
+                                        <p><span class="font-medium">建议:</span> <span id="limit-suggestion">安全，可以正常发布</span></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- 口水文检测和敏感内容检测 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">口水文检测</h4>
+                                    <p><span class="font-medium">是否可能存在口水文:</span> <span id="water-content" class="text-green-600">否</span></p>
+                                    <h4 class="font-bold mb-3 mt-4">敏感内容检测</h4>
+                                    <p><span class="font-medium">你的限流指数为:</span> <span id="sensitive-index" class="text-red-600">30%左右</span></p>
+                                </div>
+                            </div>
+                            
+                            <!-- 同质化问题检测 -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                                <h4 class="font-bold mb-2">是否存在内容同质化问题</h4>
+                                <p id="homogenization-issue" class="text-gray-600">否。通过分析，该文章详细介绍了智能写作工具这款工具的功能和优势，包括AI检测、冷启动流量预测、同质化检测等多个方面，并且强调了其独特性和技术领先性。文章内容具有明确的产品介绍性质，提供了具体的工具功能说明和技术细节，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。</p>
+                            </div>
+                            
+                            <!-- 冷启动流量预测 -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <h4 class="font-bold mb-2">头条冷启动</h4>
+                                    <p id="headline-traffic" class="text-xl font-bold text-primary">&gt; 790</p>
+                                    <p class="text-sm text-gray-600">展示量</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <h4 class="font-bold mb-2">公众号冷启动</h4>
+                                    <p id="wechat-traffic" class="text-xl font-bold text-primary">&gt; 31</p>
+                                    <p class="text-sm text-gray-600">曝光次数</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <h4 class="font-bold mb-2">SEO冷启动</h4>
+                                    <p id="seo-traffic" class="text-xl font-bold text-primary">&gt; 1000</p>
+                                    <p class="text-sm text-gray-600">流量</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 数据真实性检测和过度营销 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">数据真实性检测</h4>
+                                    <p><span class="font-medium">结果:</span> <span id="data-authenticity" class="text-green-600">是</span></p>
+                                    <p class="text-sm text-gray-600 mt-2"><span class="font-medium">问题:</span> 数据缺乏来源，可信度不足</p>
+                                    <p class="text-sm text-gray-600"><span class="font-medium">建议:</span> 文章数据缺乏来源，可信度不足，建议添加数据来源。</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">过度营销</h4>
+                                    <p><span class="font-medium">结果:</span> <span id="over-marketing" class="text-green-600">否</span></p>
+                                    <p class="text-sm text-gray-600 mt-2"><span class="font-medium">修改建议:</span> 无</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 优化建议 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-lightbulb-o text-primary mr-2"></i> 优化建议
+                                </h4>
+                                <ul id="optimization-tips" class="list-disc list-inside text-gray-600 space-y-2">
+                                    <li>-</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 今日热榜 Tab -->
+        <div id="hot榜" class="tab-content hidden">
+            <!-- 英雄区域 -->
+            <section class="bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl p-12 mb-12 text-center">
+                <h2 class="text-4xl font-bold mb-4 text-shadow">今日热榜</h2>
+                <p class="text-xl mb-8 max-w-3xl mx-auto">汇聚全网热点，热门尽收无余</p>
+            </section>
+            
+            <!-- 今日热榜 -->
+            <section class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa fa-fire text-red-500 text-2xl"></i>
+                        <h2 class="text-2xl font-bold">今日热榜</h2>
+                        <p class="text-gray-500 ml-2">汇聚全网热点，热门尽收无余</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <p id="hot榜-date" class="text-gray-500">2026年03月12日星期四 19:10:04</p>
+                        <button id="refresh-hot榜" class="text-primary hover:text-primary/80 transition-colors">
+                            <i class="fa fa-refresh"></i>
+                        </button>
+                        <button class="text-gray-500 hover:text-gray-700 transition-colors">
+                            <i class="fa fa-moon-o"></i>
+                        </button>
+                        <button class="text-gray-500 hover:text-gray-700 transition-colors">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 热榜内容 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="hot-lists-container">
+                    <!-- 热榜卡片将通过JavaScript动态生成 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Markdown编辑器 Tab -->
+        <div id="markdown-editor" class="tab-content hidden">
+            <!-- 英雄区域 -->
+            <section class="bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl p-12 mb-12 text-center">
+                <h2 class="text-4xl font-bold mb-4 text-shadow">Markdown编辑器</h2>
+                <p class="text-xl mb-8 max-w-3xl mx-auto">轻松编辑Markdown内容，实时预览效果</p>
+            </section>
+            
+            <!-- Markdown编辑器 -->
+            <section class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <h2 class="text-2xl font-bold mb-6">Markdown编辑器</h2>
+                
+                <!-- 编辑器工具栏 -->
+                <div class="flex flex-wrap items-center justify-start border border-gray-300 rounded-t-lg p-2 bg-gray-50 gap-2">
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('h1')">
+                        <i class="fa fa-header"></i> H1
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('h2')">
+                        <i class="fa fa-header"></i> H2
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('h3')">
+                        <i class="fa fa-header"></i> H3
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('bold')">
+                        <i class="fa fa-bold"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('italic')">
+                        <i class="fa fa-italic"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('underline')">
+                        <i class="fa fa-underline"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('strikethrough')">
+                        <i class="fa fa-strikethrough"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('list')">
+                        <i class="fa fa-list"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('numbered-list')">
+                        <i class="fa fa-list-ol"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('link')">
+                        <i class="fa fa-link"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('image')">
+                        <i class="fa fa-image"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('code')">
+                        <i class="fa fa-code"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('code-block')">
+                        <i class="fa fa-code-fork"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('quote')">
+                        <i class="fa fa-quote-right"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('table')">
+                        <i class="fa fa-table"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('horizontal-rule')">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <!-- 左侧输入区 -->
+                    <div class="flex-1">
+                        <textarea id="md-input" rows="12" class="w-full border border-gray-300 rounded-b-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary h-[500px] resize-none" placeholder="请输入Markdown内容..."></textarea>
+                    </div>
+                    
+                    <!-- 中间预览区 -->
+                    <div class="flex-1">
+                        <div id="md-preview" class="w-full border border-gray-300 rounded-lg p-4 h-[500px] bg-gray-50 overflow-y-auto"></div>
+                    </div>
+                    
+                    <!-- 右侧格式选择侧边栏 -->
+                    <div class="w-full lg:w-64">
+                        <div class="border border-gray-300 rounded-lg p-4 h-[500px] bg-gray-50 overflow-y-auto">
+                            <!-- 尺寸调整 -->
+                            <div class="mb-6">
+                                <h3 class="font-bold mb-4">尺寸调整</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm">宽度</span>
+                                        <span id="width-value" class="text-sm">100%</span>
+                                    </div>
+                                    <input type="range" id="width-slider" min="50" max="100" value="100" class="w-full">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm">高度</span>
+                                        <span id="height-value" class="text-sm">100%</span>
+                                    </div>
+                                    <input type="range" id="height-slider" min="50" max="100" value="100" class="w-full">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">高度超出隐藏</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="height-overflow" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 字体设置 -->
+                            <div class="mb-6">
+                                <h3 class="font-bold mb-4">字体设置</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm mb-2">字体</label>
+                                        <select id="font-select" class="w-full border border-gray-300 rounded p-2">
+                                            <option value="system-ui">系统默认</option>
+                                            <option value="Arial">Arial</option>
+                                            <option value="Microsoft YaHei">微软雅黑</option>
+                                            <option value="SimSun">宋体</option>
+                                            <option value="SimHei">黑体</option>
+                                            <option value="Courier New">Courier New</option>
+                                            <option value="Georgia">Georgia</option>
+                                            <option value="Times New Roman">Times New Roman</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm mb-2">字体大小</label>
+                                        <input type="range" id="font-size-slider" min="12" max="24" value="16" class="w-full">
+                                        <div class="flex justify-between items-center mt-1">
+                                            <span class="text-xs">小</span>
+                                            <span class="text-xs">标准</span>
+                                            <span class="text-xs">大</span>
+                                            <span class="text-xs">特大</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 颜色选择 -->
+                            <div class="mb-6">
+                                <h3 class="font-bold mb-4">颜色选择</h3>
+                                <div class="grid grid-cols-6 gap-2">
+                                    <button class="color-btn w-6 h-6 rounded-full bg-white border border-gray-300" data-color="#ffffff"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-200" data-color="#e5e7eb"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-400" data-color="#9ca3af"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-600" data-color="#4b5563"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-800" data-color="#1f2937"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-black" data-color="#000000"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-red-500" data-color="#ef4444"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-orange-500" data-color="#f97316"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-yellow-500" data-color="#eab308"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-green-500" data-color="#22c55e"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-teal-500" data-color="#14b8a6"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-cyan-500" data-color="#06b6d4"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-blue-500" data-color="#3b82f6"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-indigo-500" data-color="#6366f1"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-purple-500" data-color="#8b5cf6"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-pink-500" data-color="#ec4899"></button>
+                                </div>
+                            </div>
+                            
+                            <!-- 格式选择 -->
+                            <div>
+                                <h3 class="font-bold mb-4">格式选择</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">公众号模式</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="wechat-mode" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        </label>
+                                    </div>
+                                    <div class="space-y-2 mt-4">
+                                        <h4 class="text-sm font-medium text-gray-700">系统主题</h4>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('default')">默认主题</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('byte')">字节范</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('alibaba')">阿里橙</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('notebook')">笔记本</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('business')">商务简报</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('japanese')">日本杂志</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('apple')">苹果备忘录</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('instagram')">Instagram风格</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('coil')">线圈笔记本</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('pop')">波普艺术</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('art')">艺术装饰</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('glass')">玻璃拟态</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('warm')">温暖柔和</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('minimal')">简约高级灰</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('blackwhite')">极简黑白</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('gradient')">梦幻渐变</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('xiaohongshu')">紫色小红书</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('dark')">暗黑科技</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('typewriter')">复古打字机</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('watercolor')">水彩艺术</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('chinese')">中国传统</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+
+        <!-- 使用方法 -->
+        <section id="how-it-works" class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12">使用方法</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">1</span>
+                    </div>
+                    <h3 class="font-bold mb-2">输入内容</h3>
+                    <p class="text-gray-600">在标题输入框中输入文章标题，在内容输入框中输入完整文章内容</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">2</span>
+                    </div>
+                    <h3 class="font-bold mb-2">选择类型</h3>
+                    <p class="text-gray-600">根据你的内容平台选择对应的类型（头条号、公众号、SEO文章或论文）</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">3</span>
+                    </div>
+                    <h3 class="font-bold mb-2">开始分析</h3>
+                    <p class="text-gray-600">点击"开始分析"按钮，系统将对你的内容进行全面检测和分析</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">4</span>
+                    </div>
+                    <h3 class="font-bold mb-2">查看结果</h3>
+                    <p class="text-gray-600">分析完成后，系统将显示详细的检测结果和优化建议</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">5</span>
+                    </div>
+                    <h3 class="font-bold mb-2">优化内容</h3>
+                    <p class="text-gray-600">根据系统提供的优化建议修改内容，提升内容质量和流量表现</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">6</span>
+                    </div>
+                    <h3 class="font-bold mb-2">发布内容</h3>
+                    <p class="text-gray-600">优化完成后，将内容发布到对应的平台，获得更好的流量效果</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 关于 -->
+        <section id="about" class="bg-gray-50 rounded-2xl p-8 mb-16">
+            <h2 class="text-3xl font-bold mb-6">关于本工具</h2>
+            <p class="text-gray-600 mb-4">
+                本工具旨在帮助内容创作者提升内容质量，预测流量表现，避免限流风险，从而获得更好的阅读量和曝光度。
+            </p>
+            <p class="text-gray-600 mb-4">
+                通过AI技术，我们可以检测内容的机械感，提供人性化优化建议，同时预测内容的流量表现和限流风险，
+                让你在发布前就能了解内容的潜在表现。
+            </p>
+            <p class="text-gray-600 mb-4">
+                工具支持头条号、公众号、SEO文章和论文等多种内容类型，为不同平台的内容提供针对性的优化建议。
+            </p>
+            <div class="mt-8 p-4 bg-white rounded-lg shadow-sm">
+                <h3 class="text-xl font-bold mb-4">联系我们</h3>
+                <p class="text-gray-600 mb-2">
+                    <i class="fa fa-envelope text-primary mr-2"></i> 官方客服邮箱：<a href="mailto:2742938881@qq.com" class="text-primary hover:underline">2742938881@qq.com</a>
+                </p>
+                <p class="text-gray-600">
+                    <i class="fa fa-weixin text-green-600 mr-2"></i> 微信：<span class="font-medium">xiaoqi19860607</span>
+                </p>
+                <p class="text-gray-600 mt-4">
+                    如有任何问题或建议，欢迎随时联系我们，我们将竭诚为您服务！
+                </p>
+            </div>
+        </section>
+
+        <!-- 功能介绍 -->
+        <section id="features" class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12">核心功能</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- 功能卡片 1 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-brain text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">AI检测与人性化优化</h3>
+                    <p class="text-gray-600">检测内容的AI痕迹，提供人性化优化建议，减少机械感，提升阅读体验。</p>
+                </div>
+                
+                <!-- 功能卡片 2 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-secondary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-line-chart text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">流量预测</h3>
+                    <p class="text-gray-600">对头条号、公众号、SEO等文章进行冷启动流量预测，精准度在90%左右。</p>
+                </div>
+                
+                <!-- 功能卡片 3 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-warning/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-exclamation-triangle text-warning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">限流检测</h3>
+                    <p class="text-gray-600">提前预测内容是否会被限流，避免做无用功，优化发布策略。</p>
+                </div>
+                
+                <!-- 功能卡片 4 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-danger/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-clone text-danger text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">同质化检测</h3>
+                    <p class="text-gray-600">检测内容与现有内容的相似度，避免重复，提高原创性。</p>
+                </div>
+                
+                <!-- 功能卡片 5 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-check-circle text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">数据真实性检测</h3>
+                    <p class="text-gray-600">验证内容数据的真实性，确保信息准确可靠，提升用户信任度。</p>
+                </div>
+                
+                <!-- 功能卡片 6 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-secondary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-cogs text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">效果优化</h3>
+                    <p class="text-gray-600">基于数据分析，提供具体的内容优化建议，提升整体效果。</p>
+                </div>
+                
+                <!-- 功能卡片 7 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-danger/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-shield text-danger text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">敏感和违规检测</h3>
+                    <p class="text-gray-600">对自媒体文章和内容进行提前检测，从而避免扣分的风险。</p>
+                </div>
+                
+                <!-- 功能卡片 8 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-sitemap text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">内容逻辑性检测</h3>
+                    <p class="text-gray-600">对内容逻辑性进行深度检测，并且给出修改建议。</p>
+                </div>
+                
+                <!-- 功能卡片 9 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-warning/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-bullhorn text-warning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">营销文检测</h3>
+                    <p class="text-gray-600">对文章内容进行过度营销文检测，从而让你避免踩坑。</p>
+                </div>
+                
+                <!-- 功能卡片 10 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-secondary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-check-square-o text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">标题合规检测</h3>
+                    <p class="text-gray-600">对标题、账号和简介进行暗限流检测，确保内容合规。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa fa-line-chart text-primary text-2xl"></i>
+                        <h2 class="text-xl font-bold">内容优化与流量预测工具</h2>
+                    </div>
+                    <p class="text-gray-400 mt-2">提升内容质量，预测流量表现</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400">
+                <p>&copy; 2026 内容优化与流量预测工具. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+
+        
+        // 模拟分析功能
+        document.getElementById('analyze-btn').addEventListener('click', function() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const contentType = document.getElementById('content-type').value;
+            
+            if (!content.trim()) {
+                alert('请输入内容');
+                return;
+            }
+            
+            // 显示加载状态
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 分析中...';
+            this.disabled = true;
+            
+            // 生成饼图
+            function generatePieChart(elementId, aiPercentage) {
+                const element = document.getElementById(elementId);
+                element.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = 160;
+                element.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                const centerX = 80;
+                const centerY = 80;
+                const radius = 60;
+                
+                // 绘制人工部分
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI * (1 - aiPercentage / 100));
+                ctx.closePath();
+                ctx.fillStyle = '#3b82f6';
+                ctx.fill();
+                
+                // 绘制AI部分
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, 2 * Math.PI * (1 - aiPercentage / 100), 2 * Math.PI);
+                ctx.closePath();
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                
+                // 绘制中心白色圆
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                
+                // 绘制标签
+                ctx.fillStyle = '#1e293b';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('AI', centerX, centerY - 10);
+                ctx.fillText(aiPercentage + '%', centerX, centerY + 10);
+            }
+            
+            // 生成环形图
+            function generateDoughnutChart(elementId, score) {
+                const element = document.getElementById(elementId);
+                element.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = 160;
+                element.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                const centerX = 80;
+                const centerY = 80;
+                const outerRadius = 60;
+                const innerRadius = 40;
+                
+                // 绘制背景圆环
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+                ctx.arc(centerX, centerY, innerRadius, 2 * Math.PI, 0, true);
+                ctx.closePath();
+                ctx.fillStyle = '#e5e7eb';
+                ctx.fill();
+                
+                // 绘制得分圆环
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * score / 100);
+                ctx.arc(centerX, centerY, innerRadius, -Math.PI / 2 + 2 * Math.PI * score / 100, -Math.PI / 2, true);
+                ctx.closePath();
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+            }
+            
+            // 模拟分析过程
+            setTimeout(() => {
+                // 生成模拟数据
+                const aiScore = Math.floor(Math.random() * 30) + 70; // 70-100
+                const trafficPrediction = Math.floor(Math.random() * 5000) + 1000; // 1000-6000
+                const limitRisk = Math.floor(Math.random() * 40); // 0-40
+                const homogenization = Math.floor(Math.random() * 30) + 10; // 10-40
+                const sensitiveRisk = Math.floor(Math.random() * 30); // 0-30
+                const marketingLevel = Math.floor(Math.random() * 40) + 10; // 10-50
+                const aiIndex = Math.floor(Math.random() * 40) + 30; // 30-70
+                const contentScore = Math.floor(Math.random() * 15) + 80; // 80-95
+                const logicScore = Math.floor(Math.random() * 20) + 80; // 80-100
+                const titleScore = Math.floor(Math.random() * 15) + 85; // 85-100
+                
+                // 更新结果
+                document.getElementById('ai-score').textContent = aiScore + '%';
+                document.getElementById('traffic-prediction').textContent = trafficPrediction;
+                document.getElementById('limit-risk').textContent = limitRisk + '%';
+                document.getElementById('homogenization').textContent = homogenization + '%';
+                document.getElementById('sensitive-risk').textContent = sensitiveRisk + '%';
+                document.getElementById('marketing-level').textContent = marketingLevel + '%';
+                document.getElementById('ai-index-value').textContent = aiIndex + '%';
+                document.getElementById('content-score-value').textContent = contentScore;
+                
+                // 生成图表
+                generatePieChart('ai-index-chart', aiIndex);
+                generateDoughnutChart('content-score-chart', contentScore);
+                
+                // 更新详细信息
+                document.getElementById('ai-details').textContent = `内容的AI痕迹检测评分：${aiScore}%。${aiScore > 85 ? '内容自然流畅，机械感低。' : '内容存在一定的机械感，建议优化。'}具体表现为：句式结构较为单一，缺乏情感表达，建议增加更多口语化表达和个人观点。`;
+                document.getElementById('traffic-details').textContent = `冷启动流量预测：${trafficPrediction}次阅读。预计在发布后24小时内可获得该流量。根据历史数据，类似内容的平均流量为3500次，你的内容预计表现${trafficPrediction > 3500 ? '优于' : '低于'}平均水平。`;
+                document.getElementById('limit-details').textContent = `限流风险：${limitRisk}%。${limitRisk < 20 ? '风险较低，内容符合平台规则。' : '存在一定的限流风险，建议检查内容是否符合平台规范。'}建议检查是否存在敏感话题、违规内容或营销过度的情况。`;
+                document.getElementById('sensitive-details').textContent = `敏感违规风险：${sensitiveRisk}%。${sensitiveRisk < 15 ? '风险较低，内容符合平台规范。' : '存在一定的敏感违规风险，建议检查内容是否包含敏感信息。'}具体建议：避免使用政治敏感词汇，不涉及违法违规内容，保持内容积极健康。`;
+                document.getElementById('logic-details').textContent = `内容逻辑性检测：${logicScore}%。${logicScore > 90 ? '内容逻辑结构非常清晰，论证充分，层次分明。' : '内容逻辑结构清晰，论证充分，建议保持当前的结构安排。'}建议：${logicScore < 90 ? '可以增加更多的过渡句，使内容衔接更自然。' : '继续保持当前的逻辑结构。'}`;
+                document.getElementById('marketing-details').textContent = `营销文程度：${marketingLevel}%。${marketingLevel < 30 ? '营销程度适中，不会被平台判定为过度营销。' : '营销程度较高，建议减少营销内容，增加实用信息。'}具体建议：${marketingLevel >= 30 ? '将营销内容控制在30%以内，增加更多有价值的实用信息。' : '继续保持当前的营销比例。'}`;
+                // 标题合规检测
+                if (title.trim()) {
+                    document.getElementById('title-details').textContent = `标题合规检测：${titleScore}%。${titleScore > 90 ? '标题完全符合平台规范，具有吸引力。' : '标题符合平台规范，不会被判定为违规或限流。'}建议：${titleScore < 90 ? '可以适当增加标题的吸引力，但避免使用夸大或误导性词汇。' : '继续保持当前的标题风格。'}`;
+                } else {
+                    document.getElementById('title-details').textContent = '标题合规检测：无。请输入标题以获得完整的检测结果。';
+                }
+                
+                // 基于内容的检测逻辑
+                function analyzeContent(content) {
+                    const contentLower = content.toLowerCase();
+                    
+                    // AI内容深度状态
+                    let aiDepthStatus = '';
+                    let aiDepthClass = '';
+                    if (content.length > 800) {
+                        aiDepthStatus = '优秀，内容丰富且深度足够';
+                        aiDepthClass = 'text-green-600 font-medium mb-2';
+                    } else if (content.length > 500) {
+                        aiDepthStatus = '满足发布条件';
+                        aiDepthClass = 'text-green-600 font-medium mb-2';
+                    } else if (content.length > 300) {
+                        aiDepthStatus = '内容深度一般，建议适当扩展';
+                        aiDepthClass = 'text-yellow-600 font-medium mb-2';
+                    } else {
+                        aiDepthStatus = '内容过短，建议增加内容长度';
+                        aiDepthClass = 'text-red-600 font-medium mb-2';
+                    }
+                    document.getElementById('ai-depth-status').textContent = aiDepthStatus;
+                    document.getElementById('ai-depth-status').className = aiDepthClass;
+                    
+                    // 限流指数
+                    let limitIndex = 30;
+                    // 检查敏感词汇
+                    const sensitiveWords = ['政治', '敏感', '违规', '营销', '广告', '色情', '暴力', '赌博', '毒品', '反动'];
+                    sensitiveWords.forEach(word => {
+                        if (contentLower.includes(word)) {
+                            limitIndex += 10;
+                        }
+                    });
+                    // 检查内容长度
+                    if (content.length < 300) {
+                        limitIndex += 15;
+                    }
+                    // 检查营销词汇
+                    const marketingWords = ['购买', '优惠', '促销', '折扣', '限时', '免费', '包邮'];
+                    marketingWords.forEach(word => {
+                        if (contentLower.includes(word)) {
+                            limitIndex += 5;
+                        }
+                    });
+                    document.getElementById('limit-index').textContent = limitIndex + '%';
+                    
+                    // 限流状态
+                    let limitStatus = '';
+                    let limitStatusClass = '';
+                    let limitSuggestion = '';
+                    if (limitIndex < 40) {
+                        limitStatus = '安全';
+                        limitStatusClass = 'text-green-600';
+                        limitSuggestion = '安全，可以正常发布';
+                    } else if (limitIndex < 70) {
+                        limitStatus = '中等风险';
+                        limitStatusClass = 'text-yellow-600';
+                        limitSuggestion = '存在一定限流风险，建议修改敏感内容';
+                    } else {
+                        limitStatus = '高风险';
+                        limitStatusClass = 'text-red-600';
+                        limitSuggestion = '存在高限流风险，建议大幅修改内容';
+                    }
+                    document.getElementById('limit-status').textContent = limitStatus;
+                    document.getElementById('limit-status').className = limitStatusClass;
+                    document.getElementById('limit-suggestion').textContent = limitSuggestion;
+                    
+                    // 口水文检测
+                    let waterContent = '否';
+                    let waterContentClass = 'text-green-600';
+                    const waterMarkers = ['哈哈哈', '呵呵呵', '嘻嘻嘻', '嗯嗯', '哦哦', '哎哎', '啊', '呀', '呢', '吧'];
+                    let waterCount = 0;
+                    waterMarkers.forEach(marker => {
+                        const regex = new RegExp(marker, 'g');
+                        const matches = content.match(regex);
+                        if (matches) {
+                            waterCount += matches.length;
+                        }
+                    });
+                    if (waterCount > 5 || content.length < 200) {
+                        waterContent = '是';
+                        waterContentClass = 'text-red-600';
+                    }
+                    document.getElementById('water-content').textContent = waterContent;
+                    document.getElementById('water-content').className = waterContentClass;
+                    
+                    // 敏感内容检测
+                    document.getElementById('sensitive-index').textContent = limitIndex + '%左右';
+                    
+                    // 同质化问题检测
+                    let homogenizationIssue = '';
+                    if (content.includes('工具') && content.includes('功能')) {
+                        homogenizationIssue = '否。通过分析，该文章详细介绍了智能写作工具这款工具的功能和优势，包括AI检测、冷启动流量预测、同质化检测等多个方面，并且强调了其独特性和技术领先性。文章内容具有明确的产品介绍性质，提供了具体的工具功能说明和技术细节，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    } else if (content.includes('方法') && content.includes('技巧')) {
+                        homogenizationIssue = '否。文章内容围绕方法和技巧展开，提供了具体的实施步骤和实用建议，具有一定的独特性和实用性，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    } else if (content.includes('分析') && content.includes('研究')) {
+                        homogenizationIssue = '否。文章内容包含深入的分析和研究，提供了独特的见解和观点，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    } else {
+                        homogenizationIssue = '否。文章内容具有一定的独特性，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    }
+                    document.getElementById('homogenization-issue').textContent = homogenizationIssue;
+                    
+                    // 数据真实性检测
+                    let dataAuthenticity = '否';
+                    let dataAuthenticityClass = 'text-red-600';
+                    if (content.includes('数据') || content.includes('研究') || content.includes('调查') || content.includes('统计')) {
+                        if (content.includes('来源') || content.includes('参考') || content.includes('根据')) {
+                            dataAuthenticity = '是';
+                            dataAuthenticityClass = 'text-green-600';
+                        }
+                    }
+                    document.getElementById('data-authenticity').textContent = dataAuthenticity;
+                    document.getElementById('data-authenticity').className = dataAuthenticityClass;
+                    
+                    // 过度营销
+                    let overMarketing = '否';
+                    let overMarketingClass = 'text-green-600';
+                    const marketingWordsCount = marketingWords.filter(word => contentLower.includes(word)).length;
+                    if (marketingWordsCount > 3 || contentLower.includes('购买') || contentLower.includes('下单')) {
+                        overMarketing = '是';
+                        overMarketingClass = 'text-red-600';
+                    }
+                    document.getElementById('over-marketing').textContent = overMarketing;
+                    document.getElementById('over-marketing').className = overMarketingClass;
+                    
+                    // 冷启动流量预测
+                    function predictTraffic(content) {
+                        // 基础流量值
+                        let headlineBase = 500;
+                        let wechatBase = 20;
+                        let seoBase = 800;
+                        
+                        // 根据内容长度调整
+                        if (content.length > 800) {
+                            headlineBase += 500;
+                            wechatBase += 20;
+                            seoBase += 500;
+                        } else if (content.length > 500) {
+                            headlineBase += 300;
+                            wechatBase += 10;
+                            seoBase += 300;
+                        } else if (content.length > 300) {
+                            headlineBase += 100;
+                            wechatBase += 5;
+                            seoBase += 100;
+                        }
+                        
+                        // 根据内容质量调整
+                        if (content.includes('研究') || content.includes('分析') || content.includes('数据')) {
+                            headlineBase += 200;
+                            wechatBase += 10;
+                            seoBase += 300;
+                        }
+                        
+                        // 根据敏感内容调整
+                        if (limitIndex > 50) {
+                            headlineBase -= 200;
+                            wechatBase -= 10;
+                            seoBase -= 200;
+                        }
+                        
+                        // 确保流量不为负
+                        headlineBase = Math.max(headlineBase, 200);
+                        wechatBase = Math.max(wechatBase, 5);
+                        seoBase = Math.max(seoBase, 300);
+                        
+                        return {
+                            headline: `&gt; ${headlineBase}`,
+                            wechat: `&gt; ${wechatBase}`,
+                            seo: `&gt; ${seoBase}`
+                        };
+                    }
+                    
+                    const trafficPrediction = predictTraffic(content);
+                    document.getElementById('headline-traffic').innerHTML = trafficPrediction.headline;
+                    document.getElementById('wechat-traffic').innerHTML = trafficPrediction.wechat;
+                    document.getElementById('seo-traffic').innerHTML = trafficPrediction.seo;
+                }
+                
+                // 分析内容
+                analyzeContent(content);
+                
+                // 生成优化建议
+                const tips = [
+                    '增加更多具体案例和数据支持：添加真实的案例和数据，增强内容的说服力和可信度。',
+                    '优化标题和开头，提高点击率：使用更有吸引力的标题，开头设置悬念或问题，吸引读者继续阅读。',
+                    '增加互动元素，提高用户参与度：在内容中加入问题、投票或评论引导，鼓励用户互动。',
+                    '优化关键词分布，提升SEO效果：在标题、开头、正文和结尾合理分布关键词，提高搜索引擎排名。',
+                    '保持内容结构清晰，易于阅读：使用小标题、分段、 bullet points 等格式，提高内容的可读性。',
+                    '检查并移除可能的敏感内容：避免使用政治敏感词汇，不涉及违法违规内容，保持内容积极健康。',
+                    '平衡营销内容与实用信息的比例：将营销内容控制在30%以内，增加更多有价值的实用信息。',
+                    '确保标题符合平台规范：避免使用夸大、误导性词汇，保持标题真实准确。',
+                    '增加情感表达和个人观点：减少机械感，增加人性化表达，让内容更具亲和力。',
+                    '优化内容长度和节奏：根据平台特性调整内容长度，保持合适的阅读节奏，避免冗长或过于简短。'
+                ];
+                
+                let tipsHtml = '';
+                tips.forEach(tip => {
+                    tipsHtml += `<li>${tip}</li>`;
+                });
+                document.getElementById('optimization-tips').innerHTML = tipsHtml;
+                
+                // 显示结果
+                document.getElementById('analysis-results').classList.remove('hidden');
+                
+                // 恢复按钮状态
+                this.innerHTML = '<i class="fa fa-analytics mr-2"></i> 开始分析';
+                this.disabled = false;
+                
+                // 滚动到结果区域
+                document.getElementById('analysis-results').scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
+        });
+        
+        // 清空按钮
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('analysis-results').classList.add('hidden');
+        });
+        
+        // 开始按钮
+        document.getElementById('start-btn').addEventListener('click', function() {
+            document.getElementById('title').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // 热榜日期更新
+        function updateHot榜DateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const weekday = weekdays[now.getDay()];
+            
+            const dateTimeString = `${year}年${month}月${day}日${weekday} ${hours}:${minutes}:${seconds}`;
+            if (document.getElementById('hot榜-date')) {
+                document.getElementById('hot榜-date').textContent = dateTimeString;
+            }
+        }
+        
+        // 初始更新
+        updateHot榜DateTime();
+        
+        // 每分钟更新一次
+        setInterval(updateHot榜DateTime, 60000);
+        
+        // 刷新按钮点击事件
+        if (document.getElementById('refresh-hot榜')) {
+            document.getElementById('refresh-hot榜').addEventListener('click', function() {
+                updateHot榜DateTime();
+                // 这里可以添加刷新热榜数据的逻辑
+                alert('热榜数据已刷新');
+            });
+        }
+        
+        // 等待DOM完全加载
+        window.onload = function() {
+            console.log('Window loaded, initializing all features...');
+            
+            // 标签切换功能
+            initTabSwitching();
+            
+            // 初始化Markdown编辑器
+            initMarkdownEditor();
+            
+            // 初始化热榜
+            console.log('Initializing hot lists...');
+            renderHotLists();
+            console.log('Hot lists initialized');
+        };
+        
+        // 初始化标签切换
+        function initTabSwitching() {
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            console.log('Tab links found:', tabLinks.length);
+            console.log('Tab contents found:', tabContents.length);
+            
+            // 确保所有标签内容都被正确隐藏，除了默认的内容优化标签
+            tabContents.forEach(content => {
+                if (content.id !== 'content-optimizer') {
+                    content.classList.add('hidden');
+                }
+            });
+            
+            // 为每个标签链接添加点击事件
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const tabId = this.getAttribute('data-tab');
+                    console.log('Tab clicked:', tabId);
+                    
+                    // 移除所有标签的活跃状态
+                    tabLinks.forEach(l => {
+                        l.classList.remove('text-primary', 'font-medium');
+                        l.classList.add('text-gray-600', 'hover:text-primary');
+                    });
+                    
+                    // 添加当前标签的活跃状态
+                    this.classList.add('text-primary', 'font-medium');
+                    this.classList.remove('text-gray-600', 'hover:text-primary');
+                    
+                    // 隐藏所有内容
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    // 显示当前内容
+                    const tabContent = document.getElementById(tabId);
+                    if (tabContent) {
+                        tabContent.classList.remove('hidden');
+                        // 滚动到标签内容的顶部
+                        tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        console.log('Tab content shown:', tabId);
+                    }
+                });
+            });
+        }
+        
+        // 全局变量
+        let mdInput, mdPreview;
+        
+        // 初始化Markdown编辑器
+        function initMarkdownEditor() {
+            console.log('=== Initializing Markdown Editor ===');
+            
+            // 直接选择所有相关元素
+            mdInput = document.getElementById('md-input');
+            mdPreview = document.getElementById('md-preview');
+            const mdButtons = document.querySelectorAll('.md-btn');
+            const formatButtons = document.querySelectorAll('.format-btn');
+            const colorButtons = document.querySelectorAll('.color-btn');
+            const wechatMode = document.getElementById('wechat-mode');
+            const widthSlider = document.getElementById('width-slider');
+            const widthValue = document.getElementById('width-value');
+            const heightSlider = document.getElementById('height-slider');
+            const heightValue = document.getElementById('height-value');
+            const heightOverflow = document.getElementById('height-overflow');
+            const fontSelect = document.getElementById('font-select');
+            const fontSizeSlider = document.getElementById('font-size-slider');
+            
+            // 检查所有元素是否存在
+            console.log('mdInput:', mdInput);
+            console.log('mdPreview:', mdPreview);
+            console.log('mdButtons count:', mdButtons.length);
+            console.log('formatButtons count:', formatButtons.length);
+            console.log('colorButtons count:', colorButtons.length);
+            console.log('wechatMode:', wechatMode);
+            console.log('widthSlider:', widthSlider);
+            console.log('widthValue:', widthValue);
+            console.log('heightSlider:', heightSlider);
+            console.log('heightValue:', heightValue);
+            console.log('heightOverflow:', heightOverflow);
+            console.log('fontSelect:', fontSelect);
+            console.log('fontSizeSlider:', fontSizeSlider);
+            
+            if (!mdInput || !mdPreview) {
+                console.error('Markdown editor main elements not found!');
+                return;
+            }
+            
+            // 初始渲染
+            console.log('Performing initial render...');
+            renderMarkdown();
+            
+            // 输入变化时实时渲染
+            mdInput.addEventListener('input', function() {
+                console.log('Input changed, rendering...');
+                renderMarkdown();
+            });
+            
+            // 工具栏按钮和格式选择按钮使用内联onclick事件处理程序
+            console.log('Markdown editor buttons using inline onclick handlers');
+            
+            // 颜色选择按钮点击事件
+            console.log('Adding click events to colorButtons...');
+            colorButtons.forEach((button, index) => {
+                console.log('Adding event to colorButton', index, button.getAttribute('data-color'));
+                button.addEventListener('click', function() {
+                    const color = this.getAttribute('data-color');
+                    console.log('colorButton clicked:', color);
+                });
+            });
+            
+            // 公众号模式切换
+            if (wechatMode) {
+                console.log('Adding change event to wechatMode...');
+                wechatMode.addEventListener('change', function() {
+                    console.log('wechatMode changed:', this.checked);
+                    if (this.checked) {
+                        mdPreview.classList.add('wechat-mode');
+                    } else {
+                        mdPreview.classList.remove('wechat-mode');
+                    }
+                    renderMarkdown();
+                });
+            }
+            
+            // 尺寸调整事件
+            if (widthSlider && widthValue) {
+                console.log('Adding input event to widthSlider...');
+                widthSlider.addEventListener('input', function() {
+                    widthValue.textContent = this.value + '%';
+                    mdPreview.style.width = this.value + '%';
+                    console.log('Width changed:', this.value + '%');
+                });
+            }
+            
+            if (heightSlider && heightValue) {
+                console.log('Adding input event to heightSlider...');
+                heightSlider.addEventListener('input', function() {
+                    heightValue.textContent = this.value + '%';
+                    mdPreview.style.height = this.value + '%';
+                    console.log('Height changed:', this.value + '%');
+                });
+            }
+            
+            if (heightOverflow) {
+                console.log('Adding change event to heightOverflow...');
+                heightOverflow.addEventListener('change', function() {
+                    if (this.checked) {
+                        mdPreview.style.overflowY = 'hidden';
+                    } else {
+                        mdPreview.style.overflowY = 'auto';
+                    }
+                    console.log('Height overflow changed:', this.checked);
+                });
+            }
+            
+            // 字体设置事件
+            if (fontSelect) {
+                console.log('Adding change event to fontSelect...');
+                fontSelect.addEventListener('change', function() {
+                    mdPreview.style.fontFamily = this.value;
+                    console.log('Font family changed:', this.value);
+                });
+            }
+            
+            if (fontSizeSlider) {
+                console.log('Adding input event to fontSizeSlider...');
+                fontSizeSlider.addEventListener('input', function() {
+                    mdPreview.style.fontSize = this.value + 'px';
+                    console.log('Font size changed:', this.value + 'px');
+                });
+            }
+            
+            console.log('=== Markdown Editor initialization completed ===');
+        }
+        
+        // Markdown渲染函数
+        function renderMarkdown() {
+            if (!mdInput || !mdPreview) {
+                console.error('Markdown editor elements not initialized!');
+                return;
+            }
+            const markdown = mdInput.value;
+            const html = parseMarkdown(markdown);
+            mdPreview.innerHTML = html;
+        }
+        
+        // 简单的Markdown解析
+        function parseMarkdown(markdown) {
+            // 标题
+            markdown = markdown.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+            markdown = markdown.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            markdown = markdown.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            markdown = markdown.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // 粗体、斜体、下划线和删除线
+            markdown = markdown.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
+            markdown = markdown.replace(/\*(.*)\*/gim, '<em>$1</em>');
+            markdown = markdown.replace(/__(.*)__/gim, '<u>$1</u>');
+            markdown = markdown.replace(/~~(.*)~~/gim, '<del>$1</del>');
+            
+            // 无序列表
+            markdown = markdown.replace(/(^\* .*$\n?)+/gim, function(match) {
+                return '<ul>' + match.replace(/^\* (.*$)/gim, '<li>$1</li>') + '</ul>';
+            });
+            
+            // 有序列表
+            markdown = markdown.replace(/(^\d+\. .*$\n?)+/gim, function(match) {
+                return '<ol>' + match.replace(/^\d+\. (.*$)/gim, '<li>$1</li>') + '</ol>';
+            });
+            
+            // 链接
+            markdown = markdown.replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, '<a href="$2" target="_blank">$1</a>');
+            
+            // 图片
+            markdown = markdown.replace(/!\[([^\]]*)\]\(([^\)]+)\)/gim, '<img src="$2" alt="$1" class="max-w-full">');
+            
+            // 行内代码
+            markdown = markdown.replace(/`(.*)`/gim, '<code>$1</code>');
+            
+            // 代码块
+            markdown = markdown.replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>');
+            
+            // 引用
+            markdown = markdown.replace(/(^> .*$\n?)+/gim, function(match) {
+                return '<blockquote>' + match.replace(/^> (.*$)/gim, '$1') + '</blockquote>';
+            });
+            
+            // 水平线
+            markdown = markdown.replace(/^---$/gim, '<hr>');
+            
+            // 段落
+            markdown = markdown.replace(/^(?!<h[1-6]>)(?!<ul>)(?!<ol>)(?!<li>)(?!<blockquote>)(?!<pre>)(?!<hr>)(.*$)/gim, '<p>$1</p>');
+            
+            return markdown;
+        }
+        
+        // 插入Markdown格式
+        function insertMarkdown(command) {
+            if (!mdInput) {
+                console.error('mdInput not initialized!');
+                return;
+            }
+            const start = mdInput.selectionStart;
+            const end = mdInput.selectionEnd;
+            const selectedText = mdInput.value.substring(start, end);
+            let insertText = '';
+            
+            switch(command) {
+                case 'h1':
+                    insertText = `# ${selectedText || '标题'}`;
+                    break;
+                case 'h2':
+                    insertText = `## ${selectedText || '副标题'}`;
+                    break;
+                case 'h3':
+                    insertText = `### ${selectedText || '小标题'}`;
+                    break;
+                case 'bold':
+                    insertText = `**${selectedText || '粗体文本'}**`;
+                    break;
+                case 'italic':
+                    insertText = `*${selectedText || '斜体文本'}*`;
+                    break;
+                case 'underline':
+                    insertText = `__${selectedText || '下划线文本'}__`;
+                    break;
+                case 'strikethrough':
+                    insertText = `~~${selectedText || '删除线文本'}~~`;
+                    break;
+                case 'list':
+                    insertText = `* ${selectedText || '列表项'}`;
+                    break;
+                case 'numbered-list':
+                    insertText = `1. ${selectedText || '列表项'}`;
+                    break;
+                case 'link':
+                    insertText = `[${selectedText || '链接文本'}](https://example.com)`;
+                    break;
+                case 'image':
+                    insertText = `![${selectedText || '图片描述'}](https://example.com/image.jpg)`;
+                    break;
+                case 'code':
+                    insertText = `\`${selectedText || '代码'}\``;
+                    break;
+                case 'code-block':
+                    insertText = `\`\`\`\n${selectedText || '代码块'}\n\`\`\``;
+                    break;
+                case 'quote':
+                    insertText = `> ${selectedText || '引用文本'}`;
+                    break;
+                case 'table':
+                    insertText = `| 表头1 | 表头2 | 表头3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |`;
+                    break;
+                case 'horizontal-rule':
+                    insertText = `---`;
+                    break;
+            }
+            
+            mdInput.value = mdInput.value.substring(0, start) + insertText + mdInput.value.substring(end);
+            mdInput.focus();
+            mdInput.selectionStart = start + insertText.length;
+            mdInput.selectionEnd = start + insertText.length;
+            
+            renderMarkdown();
+        }
+        
+        // 应用格式
+        function applyFormat(format) {
+            if (!mdPreview) {
+                console.error('mdPreview not initialized!');
+                return;
+            }
+            // 移除所有格式类
+            mdPreview.className = 'w-full border border-gray-300 rounded-lg p-4 h-[500px] bg-gray-50 overflow-y-auto';
+            
+            // 添加选中的格式类
+            if (format !== 'default') {
+                mdPreview.classList.add(`format-${format}`);
+            }
+            
+            // 重新渲染
+            renderMarkdown();
+        }
+        
+        // 平台配置数据
+        const platformConfig = {
+          bilibili: {
+            name: '哔哩哔哩',
+            icon: 'fa-play-circle',
+            iconColor: 'text-pink-500',
+            baseUrl: 'https://www.bilibili.com/v/popular/rank/all'
+          },
+          weibo: {
+            name: '微博',
+            icon: 'fa-weibo',
+            iconColor: 'text-red-500',
+            baseUrl: 'https://weibo.com/hotsearch'
+          },
+          douyin: {
+            name: '抖音',
+            icon: 'fa-music',
+            iconColor: 'text-blue-500',
+            baseUrl: 'https://www.douyin.com/hotsoon'
+          },
+          zhihu: {
+            name: '知乎',
+            icon: 'fa-lightbulb-o',
+            iconColor: 'text-blue-500',
+            baseUrl: 'https://www.zhihu.com/hot'
+          },
+          '36kr': {
+            name: '36氪',
+            icon: 'fa-newspaper-o',
+            iconColor: 'text-blue-600',
+            baseUrl: 'https://36kr.com/'
+          },
+          baidu: {
+            name: '百度',
+            icon: 'fa-search',
+            iconColor: 'text-blue-600',
+            baseUrl: 'https://top.baidu.com'
+          },
+          shaoshupai: {
+            name: '少数派',
+            icon: 'fa-lightbulb-o',
+            iconColor: 'text-orange-500',
+            baseUrl: 'https://sspai.com/hot'
+          },
+          ithome: {
+            name: 'IT之家',
+            icon: 'fa-home',
+            iconColor: 'text-blue-500',
+            baseUrl: 'https://www.ithome.com/hot'
+          },
+          thepaper: {
+            name: '澎湃新闻',
+            icon: 'fa-newspaper-o',
+            iconColor: 'text-blue-500',
+            baseUrl: 'https://www.thepaper.cn/hot'
+          },
+          toutiao: {
+            name: '今日头条',
+            icon: 'fa-newspaper-o',
+            iconColor: 'text-orange-500',
+            baseUrl: 'https://toutiao.com/'
+          },
+          tieba: {
+            name: '百度贴吧',
+            icon: 'fa-comments',
+            iconColor: 'text-blue-600',
+            baseUrl: 'https://tieba.baidu.com/hot'
+          },
+          juejin: {
+            name: '稀土掘金',
+            icon: 'fa-code',
+            iconColor: 'text-yellow-500',
+            baseUrl: 'https://juejin.cn/hot'
+          },
+          qqnews: {
+            name: '腾讯新闻',
+            icon: 'fa-newspaper-o',
+            iconColor: 'text-blue-500',
+            baseUrl: 'https://news.qq.com/'
+          }
+        };
+        
+        // 热榜数据
+        const hotListData = {
+          bilibili: [
+            { title: '【年度混剪】2026，我们一起走过', hot: '523万', url: 'https://www.bilibili.com/v/popular/rank/all' },
+            { title: '程序员35岁危机怎么做？', hot: '412万', url: 'https://www.bilibili.com/v/popular/rank/all' },
+            { title: '这个up主太会了！', hot: '356万', url: 'https://www.bilibili.com/v/popular/rank/all' },
+            { title: '2026年度科技盘点', hot: '289万', url: 'https://www.bilibili.com/v/popular/rank/all' },
+            { title: '必看！高分纪录片推荐', hot: '234万', url: 'https://www.bilibili.com/v/popular/rank/all' }
+          ],
+          weibo: [
+            { title: '人工智能最新突破引热议', hot: '2.3亿', url: 'https://weibo.com/hotsearch' },
+            { title: '春节档票房再创新高', hot: '1.8亿', url: 'https://weibo.com/hotsearch' },
+            { title: '冬奥会精彩回顾', hot: '1.5亿', url: 'https://weibo.com/hotsearch' },
+            { title: '新能源汽车销量暴涨', hot: '1.2亿', url: 'https://weibo.com/hotsearch' },
+            { title: '教育部发布重要通知', hot: '9800万', url: 'https://weibo.com/hotsearch' }
+          ],
+          douyin: [
+            { title: '全网最火舞蹈挑战', hot: '5.2亿', url: 'https://www.douyin.com/hotsoon' },
+            { title: '一分钟学会做美食', hot: '4.1亿', url: 'https://www.douyin.com/hotsoon' },
+            { title: '旅行vlog合集', hot: '3.5亿', url: 'https://www.douyin.com/hotsoon' },
+            { title: '萌宠日常太可爱了', hot: '2.8亿', url: 'https://www.douyin.com/hotsoon' },
+            { title: '搞笑视频精选', hot: '2.1亿', url: 'https://www.douyin.com/hotsoon' }
+          ],
+          zhihu: [
+            { title: '如何看待2026年的科技发展？', hot: '8900万', url: 'https://www.zhihu.com/hot' },
+            { title: '有哪些让你惊艳的设计？', hot: '7600万', url: 'https://www.zhihu.com/hot' },
+            { title: '程序员如何保持学习？', hot: '6500万', url: 'https://www.zhihu.com/hot' },
+            { title: '推荐一本你最爱的书', hot: '5400万', url: 'https://www.zhihu.com/hot' },
+            { title: '什么是真正的成长？', hot: '4300万', url: 'https://www.zhihu.com/hot' }
+          ],
+          '36kr': [
+            { title: '2026创投趋势报告', hot: '568万', url: 'https://36kr.com/' },
+            { title: 'AI行业深度分析', hot: '445万', url: 'https://36kr.com/' },
+            { title: '科创板最新动态', hot: '378万', url: 'https://36kr.com/' },
+            { title: '创业公司融资新闻', hot: '298万', url: 'https://36kr.com/' },
+            { title: '商业案例分析', hot: '234万', url: 'https://36kr.com/' }
+          ],
+          baidu: [
+            { title: '今天天气预报', hot: '3.2亿', url: 'https://top.baidu.com' },
+            { title: '股市行情走势', hot: '2.8亿', url: 'https://top.baidu.com' },
+            { title: '最新政策解读', hot: '2.1亿', url: 'https://top.baidu.com' },
+            { title: '健康养生知识', hot: '1.8亿', url: 'https://top.baidu.com' },
+            { title: '旅游景点推荐', hot: '1.5亿', url: 'https://top.baidu.com' }
+          ],
+          shaoshupai: [
+            { title: '2026年度效率工具推荐', hot: '156万', url: 'https://sspai.com/' },
+            { title: '高效工作法分享', hot: '134万', url: 'https://sspai.com/' },
+            { title: 'Mac使用技巧', hot: '118万', url: 'https://sspai.com/' },
+            { title: 'iOS优质应用', hot: '98万', url: 'https://sspai.com/' },
+            { title: '数字极简主义', hot: '76万', url: 'https://sspai.com/' }
+          ],
+          ithome: [
+            { title: 'iPhone 16最新消息', hot: '876万', url: 'https://www.ithome.com/' },
+            { title: 'Windows 12曝光', hot: '754万', url: 'https://www.ithome.com/' },
+            { title: 'RTX 5090发布', hot: '623万', url: 'https://www.ithome.com/' },
+            { title: '手机新品汇总', hot: '512万', url: 'https://www.ithome.com/' },
+            { title: '科技圈大事件', hot: '423万', url: 'https://www.ithome.com/' }
+          ],
+          thepaper: [
+            { title: '深度调查报告', hot: '1.2亿', url: 'https://www.thepaper.cn/' },
+            { title: '时事评论', hot: '9800万', url: 'https://www.thepaper.cn/' },
+            { title: '国际新闻', hot: '8500万', url: 'https://www.thepaper.cn/' },
+            { title: '财经分析', hot: '7200万', url: 'https://www.thepaper.cn/' },
+            { title: '文化观察', hot: '5800万', url: 'https://www.thepaper.cn/' }
+          ],
+          toutiao: [
+            { title: '今日头条热点', hot: '4.5亿', url: 'https://toutiao.com/' },
+            { title: '社会新闻汇总', hot: '3.8亿', url: 'https://toutiao.com/' },
+            { title: '体育赛事报道', hot: '3.1亿', url: 'https://toutiao.com/' },
+            { title: '娱乐八卦', hot: '2.5亿', url: 'https://toutiao.com/' },
+            { title: '生活小技巧', hot: '1.9亿', url: 'https://toutiao.com/' }
+          ],
+          tieba: [
+            { title: '贴吧热议话题', hot: '8900万', url: 'https://tieba.baidu.com/' },
+            { title: '游戏吧精华', hot: '7600万', url: 'https://tieba.baidu.com/' },
+            { title: '动漫讨论', hot: '6500万', url: 'https://tieba.baidu.com/' },
+            { title: '生活分享', hot: '5400万', url: 'https://tieba.baidu.com/' },
+            { title: '技术交流', hot: '4300万', url: 'https://tieba.baidu.com/' }
+          ],
+          juejin: [
+            { title: '前端技术热点', hot: '234万', url: 'https://juejin.cn/' },
+            { title: '后端架构实战', hot: '189万', url: 'https://juejin.cn/' },
+            { title: '算法面试题解', hot: '167万', url: 'https://juejin.cn/' },
+            { title: '云原生技术', hot: '145万', url: 'https://juejin.cn/' },
+            { title: 'AI开发实践', hot: '123万', url: 'https://juejin.cn/' }
+          ],
+          qqnews: [
+            { title: '腾讯新闻头条', hot: '2.8亿', url: 'https://news.qq.com/' },
+            { title: '国内新闻', hot: '2.3亿', url: 'https://news.qq.com/' },
+            { title: '国际新闻', hot: '1.9亿', url: 'https://news.qq.com/' },
+            { title: '军事动态', hot: '1.5亿', url: 'https://news.qq.com/' },
+            { title: '历史故事', hot: '1.2亿', url: 'https://news.qq.com/' }
+          ]
+        };
+        
+        // 获取排名颜色
+        function getRankColor(rank) {
+          const colors = {
+            1: 'text-red-500',
+            2: 'text-orange-500',
+            3: 'text-yellow-500',
+            4: 'text-gray-500',
+            5: 'text-gray-500'
+          };
+          return colors[rank] || 'text-gray-500';
+        }
+        
+        // 生成单个热榜卡片
+        function createHotListCard(platformKey, items) {
+          const config = platformConfig[platformKey];
+          
+          if (!config) {
+            console.error(`Platform config not found for: ${platformKey}`);
+            return '';
+          }
+          
+          const itemsHtml = items.map((item, index) => {
+            const rank = index + 1;
+            const rankColor = getRankColor(rank);
+            const itemUrl = item.url || config.baseUrl;
+            return `
+              <li class="flex items-start">
+                <span class="${rankColor} font-bold mr-2">${rank}</span>
+                <div class="flex-1">
+                  <a href="${itemUrl}" target="_blank" class="text-gray-800 hover:text-primary transition-colors">${item.title}</a>
+                  <p class="text-gray-500 text-sm">${item.hot}</p>
+                </div>
+              </li>
+            `;
+          }).join('');
+          
+          return `
+            <div class="bg-gray-50 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                  <i class="fa ${config.icon} ${config.iconColor}"></i>
+                  <h3 class="font-bold">${config.name}</h3>
+                </div>
+                <button class="text-primary text-sm" onclick="refreshHotList('${platformKey}')">
+                  <i class="fa fa-refresh"></i>
+                </button>
+              </div>
+              <ul class="space-y-3">
+                ${itemsHtml}
+              </ul>
+            </div>
+          `;
+        }
+        
+        // 生成所有热榜卡片
+        function renderHotLists() {
+          const container = document.getElementById('hot-lists-container');
+          const platforms = Object.keys(hotListData);
+          
+          console.log('Platforms in hotListData:', platforms);
+          console.log('Platforms in platformConfig:', Object.keys(platformConfig));
+          
+          const cardsHtml = platforms.map(platform => {
+            console.log('Processing platform:', platform);
+            return createHotListCard(platform, hotListData[platform]);
+          }).join('');
+          
+          console.log('Generated cards HTML:', cardsHtml);
+          container.innerHTML = cardsHtml;
+        }
+        
+        // 刷新单个平台的热榜
+        window.refreshHotList = function(platformKey) {
+          console.log(`刷新 ${platformConfig[platformKey].name} 热榜`);
+          // 这里可以添加实际的刷新逻辑，比如从API获取数据
+          renderHotLists();
+          alert(`${platformConfig[platformKey].name}热榜数据已刷新`);
+        }
+    </script>
+</body>
+</html>
