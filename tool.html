@@ -1,0 +1,2703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容优化与流量预测工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            }
+        }
+        
+        /* Markdown编辑器样式 */
+        #md-preview h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        #md-preview h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+        }
+        #md-preview h3 {
+            font-size: 1.125rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        #md-preview h4 {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        #md-preview p {
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        #md-preview ul {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        #md-preview ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        #md-preview li {
+            margin-bottom: 0.5rem;
+        }
+        #md-preview a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        #md-preview img {
+            margin: 1rem 0;
+        }
+        #md-preview code {
+            background-color: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+        #md-preview pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        #md-preview pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        #md-preview blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+            color: #6b7280;
+        }
+        #md-preview hr {
+            border: 0;
+            border-top: 1px solid #e5e7eb;
+            margin: 2rem 0;
+        }
+        #md-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        #md-preview table th {
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        #md-preview table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+        }
+        #md-preview del {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+        #md-preview u {
+            text-decoration: underline;
+        }
+        
+        /* 公众号模式样式 */
+        #md-preview.wechat-mode {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.75;
+        }
+        #md-preview.wechat-mode h1 {
+            font-size: 1.75rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        #md-preview.wechat-mode h2 {
+            font-size: 1.5rem;
+            margin: 1.25rem 0;
+        }
+        #md-preview.wechat-mode p {
+            margin-bottom: 1.25rem;
+            text-indent: 2em;
+        }
+        
+        /* 格式主题样式 */
+        #md-preview.format-byte {
+            background-color: #f0f9ff;
+            border-color: #bfdbfe;
+        }
+        #md-preview.format-alibaba {
+            background-color: #fff7ed;
+            border-color: #fdba74;
+        }
+        #md-preview.format-notebook {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            font-family: 'Courier New', monospace;
+        }
+        #md-preview.format-business {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            font-family: 'Arial', sans-serif;
+        }
+        #md-preview.format-japanese {
+            background-color: #fefce8;
+            border-color: #fbbf24;
+            font-family: 'MS Mincho', serif;
+        }
+        #md-preview.format-apple {
+            background-color: #f5f5f5;
+            border-color: #d1d5db;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        #md-preview.format-instagram {
+            background-color: #fafafa;
+            border-color: #e5e7eb;
+            font-family: 'Instagram Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        #md-preview.format-coil {
+            background-color: #fefefe;
+            border-color: #e5e7eb;
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 100% 1.5rem;
+        }
+        #md-preview.format-pop {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        #md-preview.format-art {
+            background-color: #fdf4ff;
+            border-color: #fbcfe8;
+            font-family: 'Georgia', serif;
+        }
+        #md-preview.format-glass {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        #md-preview.format-warm {
+            background-color: #fffbeb;
+            border-color: #fef3c7;
+            font-family: 'Georgia', serif;
+        }
+        #md-preview.format-minimal {
+            background-color: #f9fafb;
+            border-color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+        }
+        #md-preview.format-blackwhite {
+            background-color: #ffffff;
+            border-color: #000000;
+            font-family: 'Arial', sans-serif;
+        }
+        #md-preview.format-gradient {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-color: #e5e7eb;
+        }
+        #md-preview.format-xiaohongshu {
+            background-color: #fdf2f8;
+            border-color: #fbcfe8;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        #md-preview.format-dark {
+            background-color: #1e293b;
+            border-color: #334155;
+            color: #f8fafc;
+        }
+        #md-preview.format-typewriter {
+            background-color: #f5f5f5;
+            border-color: #d1d5db;
+            font-family: 'Courier New', monospace;
+        }
+        #md-preview.format-watercolor {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+            font-family: 'Georgia', serif;
+        }
+        #md-preview.format-chinese {
+            background-color: #fef3c7;
+            border-color: #fcd34d;
+            font-family: 'SimSun', serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-line-chart text-primary text-2xl"></i>
+                <h1 class="text-2xl font-bold text-dark">内容优化与流量预测工具</h1>
+            </div>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#content-optimizer" class="tab-link text-primary font-medium" data-tab="content-optimizer">内容优化</a></li>
+                    <li><a href="#segment-detection" class="tab-link text-gray-600 hover:text-primary transition-colors" data-tab="segment-detection">分段检测</a></li>
+                    <li><a href="#markdown-editor" class="tab-link text-gray-600 hover:text-primary transition-colors" data-tab="markdown-editor">Markdown编辑器</a></li>
+                    <li><a href="#about" class="text-gray-600 hover:text-primary transition-colors">关于</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 内容优化 Tab -->
+        <div id="content-optimizer" class="tab-content">
+            <!-- 英雄区域 -->
+            <section class="bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl p-12 mb-12 text-center">
+                <h2 class="text-4xl font-bold mb-4 text-shadow">提升内容质量，预测流量表现</h2>
+                <p class="text-xl mb-8 max-w-3xl mx-auto">通过AI检测、人性化优化和流量预测，让你的内容快速进入流量池，提升阅读量40%以上！</p>
+                <button id="start-btn" class="bg-white text-primary font-bold py-3 px-8 rounded-full hover:bg-gray-100 transition-colors shadow-lg">
+                    开始优化
+                </button>
+            </section>
+
+            <!-- 操作区域 -->
+            <section class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <h2 class="text-2xl font-bold mb-6">内容分析与优化</h2>
+                
+                <!-- 标题输入 -->
+                <div class="mb-6">
+                    <label for="title" class="block text-gray-700 font-medium mb-2">输入你的标题</label>
+                    <input type="text" id="title" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入文章标题...">
+                </div>
+                
+                <!-- 内容输入 -->
+                <div class="mb-6">
+                    <label for="content" class="block text-gray-700 font-medium mb-2">输入你的内容</label>
+                    <textarea id="content" rows="8" class="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入文章内容..."></textarea>
+                </div>
+                
+                <!-- 内容类型选择 -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">内容类型</label>
+                    <select id="content-type" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="headline">头条号</option>
+                        <option value="wechat">公众号</option>
+                        <option value="seo">SEO文章</option>
+                        <option value="paper">论文</option>
+                    </select>
+                </div>
+                
+                <!-- 分析按钮 -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <button id="analyze-btn" class="flex-1 bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-analytics mr-2"></i> 开始分析
+                    </button>
+                    <button id="clear-btn" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fa fa-eraser mr-2"></i> 清空内容
+                    </button>
+                </div>
+                
+                <!-- 分析结果 -->
+                <div id="analysis-results" class="hidden">
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-xl font-bold mb-4">分析结果</h3>
+                        
+                        <!-- 结果概览 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">AI检测评分</h4>
+                                <p id="ai-score" class="text-2xl font-bold text-primary">-</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">流量预测</h4>
+                                <p id="traffic-prediction" class="text-2xl font-bold text-secondary">-</p>
+                            </div>
+                            <div class="bg-yellow-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">限流风险</h4>
+                                <p id="limit-risk" class="text-2xl font-bold text-warning">-</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">同质化程度</h4>
+                                <p id="homogenization" class="text-2xl font-bold text-danger">-</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">敏感违规风险</h4>
+                                <p id="sensitive-risk" class="text-2xl font-bold text-purple-600">-</p>
+                            </div>
+                            <div class="bg-indigo-50 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-gray-600 mb-1">营销文程度</h4>
+                                <p id="marketing-level" class="text-2xl font-bold text-indigo-600">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 详细分析 -->
+                        <div class="space-y-6">
+                            <!-- AI检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-brain text-primary mr-2"></i> AI检测详情
+                                </h4>
+                                <p id="ai-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 流量预测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-line-chart text-secondary mr-2"></i> 流量预测详情
+                                </h4>
+                                <p id="traffic-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 限流检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-exclamation-triangle text-warning mr-2"></i> 限流检测详情
+                                </h4>
+                                <p id="limit-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 敏感和违规检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-shield text-danger mr-2"></i> 敏感和违规检测详情
+                                </h4>
+                                <p id="sensitive-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 内容逻辑性检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-sitemap text-primary mr-2"></i> 内容逻辑性检测详情
+                                </h4>
+                                <p id="logic-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 营销文检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-bullhorn text-warning mr-2"></i> 营销文检测详情
+                                </h4>
+                                <p id="marketing-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- 标题合规检测详情 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-check-square-o text-secondary mr-2"></i> 标题合规检测详情
+                                </h4>
+                                <p id="title-details" class="text-gray-600">-</p>
+                            </div>
+                            
+                            <!-- AI指数和文章得分 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- AI指数 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-2 flex items-center">
+                                        <i class="fa fa-brain text-primary mr-2"></i> AI指数
+                                    </h4>
+                                    <div class="flex items-center justify-center">
+                                        <div id="ai-index-chart" class="w-40 h-40 relative">
+                                            <!-- 饼图将通过JavaScript生成 -->
+                                        </div>
+                                        <div class="ml-4">
+                                            <p id="ai-index-value" class="text-2xl font-bold text-primary">58%</p>
+                                            <p class="text-sm text-gray-600">AI生成占比</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 文章得分 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-2 flex items-center">
+                                        <i class="fa fa-star text-warning mr-2"></i> 文章得分
+                                    </h4>
+                                    <div class="flex items-center justify-center">
+                                        <div id="content-score-chart" class="w-40 h-40 relative">
+                                            <!-- 环形图将通过JavaScript生成 -->
+                                        </div>
+                                        <div class="ml-4">
+                                            <p id="content-score-value" class="text-2xl font-bold text-secondary">90</p>
+                                            <p class="text-sm text-gray-600">综合评分</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 新增检测功能 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <!-- AI内容深度状态和限流指数 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">AI内容深度状态</h4>
+                                    <p id="ai-depth-status" class="text-green-600 font-medium mb-2">满足发布条件</p>
+                                    <h4 class="font-bold mb-3">限流指数</h4>
+                                    <div class="space-y-2">
+                                        <p><span class="font-medium">限流指数:</span> <span id="limit-index">30%</span></p>
+                                        <p><span class="font-medium">限流状态:</span> <span id="limit-status" class="text-green-600">安全</span></p>
+                                        <p><span class="font-medium">建议:</span> <span id="limit-suggestion">安全，可以正常发布</span></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- 口水文检测和敏感内容检测 -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">口水文检测</h4>
+                                    <p><span class="font-medium">是否可能存在口水文:</span> <span id="water-content" class="text-green-600">否</span></p>
+                                    <h4 class="font-bold mb-3 mt-4">敏感内容检测</h4>
+                                    <p><span class="font-medium">你的限流指数为:</span> <span id="sensitive-index" class="text-red-600">30%左右</span></p>
+                                </div>
+                            </div>
+                            
+                            <!-- 同质化问题检测 -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                                <h4 class="font-bold mb-2">是否存在内容同质化问题</h4>
+                                <p id="homogenization-issue" class="text-gray-600">否。通过分析，该文章详细介绍了智能写作工具这款工具的功能和优势，包括AI检测、冷启动流量预测、同质化检测等多个方面，并且强调了其独特性和技术领先性。文章内容具有明确的产品介绍性质，提供了具体的工具功能说明和技术细节，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。</p>
+                            </div>
+                            
+                            <!-- 冷启动流量预测 -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <h4 class="font-bold mb-2">头条冷启动</h4>
+                                    <p id="headline-traffic" class="text-xl font-bold text-primary">&gt; 790</p>
+                                    <p class="text-sm text-gray-600">展示量</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <h4 class="font-bold mb-2">公众号冷启动</h4>
+                                    <p id="wechat-traffic" class="text-xl font-bold text-primary">&gt; 31</p>
+                                    <p class="text-sm text-gray-600">曝光次数</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <h4 class="font-bold mb-2">SEO冷启动</h4>
+                                    <p id="seo-traffic" class="text-xl font-bold text-primary">&gt; 1000</p>
+                                    <p class="text-sm text-gray-600">流量</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 数据真实性检测和过度营销 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">数据真实性检测</h4>
+                                    <p><span class="font-medium">结果:</span> <span id="data-authenticity" class="text-green-600">是</span></p>
+                                    <p class="text-sm text-gray-600 mt-2"><span class="font-medium">问题:</span> 数据缺乏来源，可信度不足</p>
+                                    <p class="text-sm text-gray-600"><span class="font-medium">建议:</span> 文章数据缺乏来源，可信度不足，建议添加数据来源。</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-bold mb-3">过度营销</h4>
+                                    <p><span class="font-medium">结果:</span> <span id="over-marketing" class="text-green-600">否</span></p>
+                                    <p class="text-sm text-gray-600 mt-2"><span class="font-medium">修改建议:</span> 无</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 优化建议 -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-2 flex items-center">
+                                    <i class="fa fa-lightbulb-o text-primary mr-2"></i> 优化建议
+                                </h4>
+                                <ul id="optimization-tips" class="list-disc list-inside text-gray-600 space-y-2">
+                                    <li>-</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 分段检测 Tab -->
+        <div id="segment-detection" class="tab-content hidden">
+            <!-- 英雄区域 -->
+            <section class="bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl p-12 mb-12 text-center">
+                <h2 class="text-4xl font-bold mb-4 text-shadow">分段检测</h2>
+                <p class="text-xl mb-8 max-w-3xl mx-auto">输入文章内容，自动分段检测，点击结果替换同义词</p>
+            </section>
+            
+            <!-- 分段检测 -->
+            <section class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <h2 class="text-2xl font-bold mb-6">分段检测</h2>
+                
+                <!-- 内容输入 -->
+                <div class="mb-6">
+                    <label for="segment-content" class="block text-gray-700 font-medium mb-2">输入你的内容</label>
+                    <textarea id="segment-content" rows="8" class="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入文章内容..."></textarea>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <button id="detect-btn" class="flex-1 bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-search mr-2"></i> 开始检测
+                    </button>
+                    <button id="clear-segment-btn" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fa fa-eraser mr-2"></i> 清空内容
+                    </button>
+                    <button id="import-segment-btn" class="flex-1 bg-secondary text-white font-bold py-3 px-6 rounded-lg hover:bg-secondary/90 transition-colors">
+                        <i class="fa fa-upload mr-2"></i> 导入文件
+                    </button>
+                    <button id="copy-segment-btn" class="flex-1 bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fa fa-copy mr-2"></i> 复制内容
+                    </button>
+                </div>
+                
+                <!-- 检测结果 -->
+                <div id="segment-results" class="hidden">
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-xl font-bold mb-4">检测结果</h3>
+                        
+                        <!-- 左右分栏布局 -->
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <!-- 左侧原文 -->
+                            <div class="flex-1 bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-3">原文内容</h4>
+                                <div id="original-content" class="space-y-4"></div>
+                            </div>
+                            
+                            <!-- 右侧检测结果 -->
+                            <div class="flex-1 bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-bold mb-3">检测结果</h4>
+                                <div id="detection-content" class="space-y-4"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI指数和文章得分 -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <h4 class="font-bold mb-3 flex items-center">
+                                    <i class="fa fa-brain text-primary mr-2"></i> AI指数
+                                </h4>
+                                <div class="flex items-center justify-center">
+                                    <div id="segment-ai-index-chart" class="w-40 h-40 relative">
+                                        <!-- 饼图将通过JavaScript生成 -->
+                                    </div>
+                                    <div class="ml-4">
+                                        <p id="segment-ai-index-value" class="text-2xl font-bold text-primary">15%</p>
+                                        <p class="text-sm text-gray-600">AI生成占比</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <h4 class="font-bold mb-3 flex items-center">
+                                    <i class="fa fa-star text-warning mr-2"></i> 当前文章得分
+                                </h4>
+                                <div class="flex items-center justify-center">
+                                    <div id="segment-content-score-chart" class="w-40 h-40 relative">
+                                        <!-- 环形图将通过JavaScript生成 -->
+                                    </div>
+                                    <div class="ml-4">
+                                        <p id="segment-content-score-value" class="text-2xl font-bold text-secondary">90</p>
+                                        <p class="text-sm text-gray-600">综合评分</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+
+        <!-- Markdown编辑器 Tab -->
+        <div id="markdown-editor" class="tab-content hidden">
+            <!-- 英雄区域 -->
+            <section class="bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl p-12 mb-12 text-center">
+                <h2 class="text-4xl font-bold mb-4 text-shadow">Markdown编辑器</h2>
+                <p class="text-xl mb-8 max-w-3xl mx-auto">轻松编辑Markdown内容，实时预览效果</p>
+            </section>
+            
+            <!-- Markdown编辑器 -->
+            <section class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <h2 class="text-2xl font-bold mb-6">Markdown编辑器</h2>
+                
+                <!-- 编辑器工具栏 -->
+                <div class="flex flex-wrap items-center justify-start border border-gray-300 rounded-t-lg p-2 bg-gray-50 gap-2">
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('h1')">
+                        <i class="fa fa-header"></i> H1
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('h2')">
+                        <i class="fa fa-header"></i> H2
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('h3')">
+                        <i class="fa fa-header"></i> H3
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('bold')">
+                        <i class="fa fa-bold"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('italic')">
+                        <i class="fa fa-italic"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('underline')">
+                        <i class="fa fa-underline"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('strikethrough')">
+                        <i class="fa fa-strikethrough"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('list')">
+                        <i class="fa fa-list"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('numbered-list')">
+                        <i class="fa fa-list-ol"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('link')">
+                        <i class="fa fa-link"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('image')">
+                        <i class="fa fa-image"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('code')">
+                        <i class="fa fa-code"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('code-block')">
+                        <i class="fa fa-code-fork"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('quote')">
+                        <i class="fa fa-quote-right"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('table')">
+                        <i class="fa fa-table"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="insertMarkdown('horizontal-rule')">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="copyMarkdownContent()">
+                        <i class="fa fa-copy"></i> 复制
+                    </button>
+                    <button class="md-btn p-2 hover:bg-gray-200 rounded flex items-center justify-center w-10 h-10" onclick="exportMarkdownContent()">
+                        <i class="fa fa-download"></i> 导出
+                    </button>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <!-- 左侧输入区 -->
+                    <div class="flex-1">
+                        <textarea id="md-input" rows="12" class="w-full border border-gray-300 rounded-b-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary h-[500px] resize-none" placeholder="请输入Markdown内容..."></textarea>
+                    </div>
+                    
+                    <!-- 中间预览区 -->
+                    <div class="flex-1">
+                        <div id="md-preview" class="w-full border border-gray-300 rounded-lg p-4 h-[500px] bg-gray-50 overflow-y-auto"></div>
+                    </div>
+                    
+                    <!-- 右侧格式选择侧边栏 -->
+                    <div class="w-full lg:w-64">
+                        <div class="border border-gray-300 rounded-lg p-4 h-[500px] bg-gray-50 overflow-y-auto">
+                            <!-- 尺寸调整 -->
+                            <div class="mb-6">
+                                <h3 class="font-bold mb-4">尺寸调整</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm">宽度</span>
+                                        <span id="width-value" class="text-sm">100%</span>
+                                    </div>
+                                    <input type="range" id="width-slider" min="50" max="100" value="100" class="w-full">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm">高度</span>
+                                        <span id="height-value" class="text-sm">100%</span>
+                                    </div>
+                                    <input type="range" id="height-slider" min="50" max="100" value="100" class="w-full">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">高度超出隐藏</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="height-overflow" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 字体设置 -->
+                            <div class="mb-6">
+                                <h3 class="font-bold mb-4">字体设置</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm mb-2">字体</label>
+                                        <select id="font-select" class="w-full border border-gray-300 rounded p-2">
+                                            <option value="system-ui">系统默认</option>
+                                            <option value="Arial">Arial</option>
+                                            <option value="Microsoft YaHei">微软雅黑</option>
+                                            <option value="SimSun">宋体</option>
+                                            <option value="SimHei">黑体</option>
+                                            <option value="Courier New">Courier New</option>
+                                            <option value="Georgia">Georgia</option>
+                                            <option value="Times New Roman">Times New Roman</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm mb-2">字体大小</label>
+                                        <input type="range" id="font-size-slider" min="12" max="24" value="16" class="w-full">
+                                        <div class="flex justify-between items-center mt-1">
+                                            <span class="text-xs">小</span>
+                                            <span class="text-xs">标准</span>
+                                            <span class="text-xs">大</span>
+                                            <span class="text-xs">特大</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 颜色选择 -->
+                            <div class="mb-6">
+                                <h3 class="font-bold mb-4">颜色选择</h3>
+                                <div class="grid grid-cols-6 gap-2">
+                                    <button class="color-btn w-6 h-6 rounded-full bg-white border border-gray-300" data-color="#ffffff"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-200" data-color="#e5e7eb"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-400" data-color="#9ca3af"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-600" data-color="#4b5563"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-gray-800" data-color="#1f2937"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-black" data-color="#000000"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-red-500" data-color="#ef4444"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-orange-500" data-color="#f97316"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-yellow-500" data-color="#eab308"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-green-500" data-color="#22c55e"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-teal-500" data-color="#14b8a6"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-cyan-500" data-color="#06b6d4"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-blue-500" data-color="#3b82f6"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-indigo-500" data-color="#6366f1"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-purple-500" data-color="#8b5cf6"></button>
+                                    <button class="color-btn w-6 h-6 rounded-full bg-pink-500" data-color="#ec4899"></button>
+                                </div>
+                            </div>
+                            
+                            <!-- 格式选择 -->
+                            <div>
+                                <h3 class="font-bold mb-4">格式选择</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">公众号模式</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="wechat-mode" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        </label>
+                                    </div>
+                                    <div class="space-y-2 mt-4">
+                                        <h4 class="text-sm font-medium text-gray-700">系统主题</h4>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('default')">默认主题</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('byte')">字节范</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('alibaba')">阿里橙</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('notebook')">笔记本</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('business')">商务简报</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('japanese')">日本杂志</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('apple')">苹果备忘录</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('instagram')">Instagram风格</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('coil')">线圈笔记本</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('pop')">波普艺术</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('art')">艺术装饰</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('glass')">玻璃拟态</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('warm')">温暖柔和</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('minimal')">简约高级灰</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('blackwhite')">极简黑白</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('gradient')">梦幻渐变</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('xiaohongshu')">紫色小红书</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('dark')">暗黑科技</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('typewriter')">复古打字机</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('watercolor')">水彩艺术</button>
+                                        <button class="format-btn w-full text-left p-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="applyFormat('chinese')">中国传统</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+
+        <!-- 使用方法 -->
+        <section id="how-it-works" class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12">使用方法</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">1</span>
+                    </div>
+                    <h3 class="font-bold mb-2">输入内容</h3>
+                    <p class="text-gray-600">在标题输入框中输入文章标题，在内容输入框中输入完整文章内容</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">2</span>
+                    </div>
+                    <h3 class="font-bold mb-2">选择类型</h3>
+                    <p class="text-gray-600">根据你的内容平台选择对应的类型（头条号、公众号、SEO文章或论文）</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">3</span>
+                    </div>
+                    <h3 class="font-bold mb-2">开始分析</h3>
+                    <p class="text-gray-600">点击"开始分析"按钮，系统将对你的内容进行全面检测和分析</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">4</span>
+                    </div>
+                    <h3 class="font-bold mb-2">查看结果</h3>
+                    <p class="text-gray-600">分析完成后，系统将显示详细的检测结果和优化建议</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">5</span>
+                    </div>
+                    <h3 class="font-bold mb-2">优化内容</h3>
+                    <p class="text-gray-600">根据系统提供的优化建议修改内容，提升内容质量和流量表现</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-primary text-xl font-bold">6</span>
+                    </div>
+                    <h3 class="font-bold mb-2">发布内容</h3>
+                    <p class="text-gray-600">优化完成后，将内容发布到对应的平台，获得更好的流量效果</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 关于 -->
+        <section id="about" class="bg-gray-50 rounded-2xl p-8 mb-16">
+            <h2 class="text-3xl font-bold mb-6">关于本工具</h2>
+            <p class="text-gray-600 mb-4">
+                本工具旨在帮助内容创作者提升内容质量，预测流量表现，避免限流风险，从而获得更好的阅读量和曝光度。
+            </p>
+            <p class="text-gray-600 mb-4">
+                通过AI技术，我们可以检测内容的机械感，提供人性化优化建议，同时预测内容的流量表现和限流风险，
+                让你在发布前就能了解内容的潜在表现。
+            </p>
+            <p class="text-gray-600 mb-4">
+                工具支持头条号、公众号、SEO文章和论文等多种内容类型，为不同平台的内容提供针对性的优化建议。
+            </p>
+            <div class="mt-8 p-4 bg-white rounded-lg shadow-sm">
+                <h3 class="text-xl font-bold mb-4">联系我们</h3>
+                <p class="text-gray-600 mb-2">
+                    <i class="fa fa-envelope text-primary mr-2"></i> 官方客服邮箱：<a href="mailto:2742938881@qq.com" class="text-primary hover:underline">2742938881@qq.com</a>
+                </p>
+                <p class="text-gray-600">
+                    <i class="fa fa-weixin text-green-600 mr-2"></i> 微信：<span class="font-medium">xiaoqi19860607</span>
+                </p>
+                <p class="text-gray-600 mt-4">
+                    如有任何问题或建议，欢迎随时联系我们，我们将竭诚为您服务！
+                </p>
+            </div>
+        </section>
+
+        <!-- 功能介绍 -->
+        <section id="features" class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12">核心功能</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- 功能卡片 1 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-brain text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">AI检测与人性化优化</h3>
+                    <p class="text-gray-600">检测内容的AI痕迹，提供人性化优化建议，减少机械感，提升阅读体验。</p>
+                </div>
+                
+                <!-- 功能卡片 2 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-secondary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-line-chart text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">流量预测</h3>
+                    <p class="text-gray-600">对头条号、公众号、SEO等文章进行冷启动流量预测，精准度在90%左右。</p>
+                </div>
+                
+                <!-- 功能卡片 3 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-warning/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-exclamation-triangle text-warning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">限流检测</h3>
+                    <p class="text-gray-600">提前预测内容是否会被限流，避免做无用功，优化发布策略。</p>
+                </div>
+                
+                <!-- 功能卡片 4 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-danger/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-clone text-danger text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">同质化检测</h3>
+                    <p class="text-gray-600">检测内容与现有内容的相似度，避免重复，提高原创性。</p>
+                </div>
+                
+                <!-- 功能卡片 5 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-check-circle text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">数据真实性检测</h3>
+                    <p class="text-gray-600">验证内容数据的真实性，确保信息准确可靠，提升用户信任度。</p>
+                </div>
+                
+                <!-- 功能卡片 6 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-secondary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-cogs text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">效果优化</h3>
+                    <p class="text-gray-600">基于数据分析，提供具体的内容优化建议，提升整体效果。</p>
+                </div>
+                
+                <!-- 功能卡片 7 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-danger/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-shield text-danger text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">敏感和违规检测</h3>
+                    <p class="text-gray-600">对自媒体文章和内容进行提前检测，从而避免扣分的风险。</p>
+                </div>
+                
+                <!-- 功能卡片 8 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-sitemap text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">内容逻辑性检测</h3>
+                    <p class="text-gray-600">对内容逻辑性进行深度检测，并且给出修改建议。</p>
+                </div>
+                
+                <!-- 功能卡片 9 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-warning/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-bullhorn text-warning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">营销文检测</h3>
+                    <p class="text-gray-600">对文章内容进行过度营销文检测，从而让你避免踩坑。</p>
+                </div>
+                
+                <!-- 功能卡片 10 -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="bg-secondary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-check-square-o text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">标题合规检测</h3>
+                    <p class="text-gray-600">对标题、账号和简介进行暗限流检测，确保内容合规。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+
+    <!-- 底部 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa fa-line-chart text-primary text-2xl"></i>
+                        <h2 class="text-xl font-bold">内容优化与流量预测工具</h2>
+                    </div>
+                    <p class="text-gray-400 mt-2">提升内容质量，预测流量表现</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400">
+                <p>&copy; 2026 内容优化与流量预测工具. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+
+        
+        // 模拟分析功能
+        document.getElementById('analyze-btn').addEventListener('click', function() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const contentType = document.getElementById('content-type').value;
+            
+            if (!content.trim()) {
+                alert('请输入内容');
+                return;
+            }
+            
+            // 显示加载状态
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 分析中...';
+            this.disabled = true;
+            
+            // 生成饼图
+            function generatePieChart(elementId, aiPercentage) {
+                const element = document.getElementById(elementId);
+                element.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = 160;
+                element.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                const centerX = 80;
+                const centerY = 80;
+                const radius = 60;
+                
+                // 绘制人工部分
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI * (1 - aiPercentage / 100));
+                ctx.closePath();
+                ctx.fillStyle = '#3b82f6';
+                ctx.fill();
+                
+                // 绘制AI部分
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, 2 * Math.PI * (1 - aiPercentage / 100), 2 * Math.PI);
+                ctx.closePath();
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                
+                // 绘制中心白色圆
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                
+                // 绘制标签
+                ctx.fillStyle = '#1e293b';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('AI', centerX, centerY - 10);
+                ctx.fillText(aiPercentage + '%', centerX, centerY + 10);
+            }
+            
+            // 生成环形图
+            function generateDoughnutChart(elementId, score) {
+                const element = document.getElementById(elementId);
+                element.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = 160;
+                element.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                const centerX = 80;
+                const centerY = 80;
+                const outerRadius = 60;
+                const innerRadius = 40;
+                
+                // 绘制背景圆环
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+                ctx.arc(centerX, centerY, innerRadius, 2 * Math.PI, 0, true);
+                ctx.closePath();
+                ctx.fillStyle = '#e5e7eb';
+                ctx.fill();
+                
+                // 绘制得分圆环
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * score / 100);
+                ctx.arc(centerX, centerY, innerRadius, -Math.PI / 2 + 2 * Math.PI * score / 100, -Math.PI / 2, true);
+                ctx.closePath();
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+            }
+            
+            // 模拟分析过程
+            setTimeout(() => {
+                // 生成模拟数据
+                const aiScore = Math.floor(Math.random() * 25) + 70; // 70-95
+                const trafficPrediction = Math.floor(Math.random() * 5000) + 1000; // 1000-6000
+                const limitRisk = Math.floor(Math.random() * 40); // 0-40
+                const homogenization = Math.floor(Math.random() * 30) + 10; // 10-40
+                const sensitiveRisk = Math.floor(Math.random() * 30); // 0-30
+                const marketingLevel = Math.floor(Math.random() * 40) + 10; // 10-50
+                const aiIndex = Math.floor(Math.random() * 40) + 30; // 30-70
+                const contentScore = Math.floor(Math.random() * 15) + 75; // 75-90
+                const logicScore = Math.floor(Math.random() * 15) + 80; // 80-95
+                const titleScore = Math.floor(Math.random() * 10) + 85; // 85-95
+                
+                // 更新结果
+                document.getElementById('ai-score').textContent = aiScore + '%';
+                document.getElementById('traffic-prediction').textContent = trafficPrediction;
+                document.getElementById('limit-risk').textContent = limitRisk + '%';
+                document.getElementById('homogenization').textContent = homogenization + '%';
+                document.getElementById('sensitive-risk').textContent = sensitiveRisk + '%';
+                document.getElementById('marketing-level').textContent = marketingLevel + '%';
+                document.getElementById('ai-index-value').textContent = aiIndex + '%';
+                document.getElementById('content-score-value').textContent = contentScore;
+                
+                // 生成图表
+                try {
+                    generatePieChart('ai-index-chart', aiIndex);
+                    generateDoughnutChart('content-score-chart', contentScore);
+                } catch (error) {
+                    console.error('Error generating charts:', error);
+                }
+                
+                // 更新详细信息
+                document.getElementById('ai-details').textContent = `内容的AI痕迹检测评分：${aiScore}%。${aiScore > 85 ? '内容自然流畅，机械感低。' : '内容存在一定的机械感，建议优化。'}具体表现为：句式结构较为单一，缺乏情感表达，建议增加更多口语化表达和个人观点。`;
+                document.getElementById('traffic-details').textContent = `冷启动流量预测：${trafficPrediction}次阅读。预计在发布后24小时内可获得该流量。根据历史数据，类似内容的平均流量为3500次，你的内容预计表现${trafficPrediction > 3500 ? '优于' : '低于'}平均水平。`;
+                document.getElementById('limit-details').textContent = `限流风险：${limitRisk}%。${limitRisk < 20 ? '风险较低，内容符合平台规则。' : '存在一定的限流风险，建议检查内容是否符合平台规范。'}建议检查是否存在敏感话题、违规内容或营销过度的情况。`;
+                document.getElementById('sensitive-details').textContent = `敏感违规风险：${sensitiveRisk}%。${sensitiveRisk < 15 ? '风险较低，内容符合平台规范。' : '存在一定的敏感违规风险，建议检查内容是否包含敏感信息。'}具体建议：避免使用政治敏感词汇，不涉及违法违规内容，保持内容积极健康。`;
+                document.getElementById('logic-details').textContent = `内容逻辑性检测：${logicScore}%。${logicScore > 90 ? '内容逻辑结构非常清晰，论证充分，层次分明。' : '内容逻辑结构清晰，论证充分，建议保持当前的结构安排。'}建议：${logicScore < 90 ? '可以增加更多的过渡句，使内容衔接更自然。' : '继续保持当前的逻辑结构。'}`;
+                document.getElementById('marketing-details').textContent = `营销文程度：${marketingLevel}%。${marketingLevel < 30 ? '营销程度适中，不会被平台判定为过度营销。' : '营销程度较高，建议减少营销内容，增加实用信息。'}具体建议：${marketingLevel >= 30 ? '将营销内容控制在30%以内，增加更多有价值的实用信息。' : '继续保持当前的营销比例。'}`;
+                // 标题合规检测
+                if (title.trim()) {
+                    document.getElementById('title-details').textContent = `标题合规检测：${titleScore}%。${titleScore > 90 ? '标题完全符合平台规范，具有吸引力。' : '标题符合平台规范，不会被判定为违规或限流。'}建议：${titleScore < 90 ? '可以适当增加标题的吸引力，但避免使用夸大或误导性词汇。' : '继续保持当前的标题风格。'}`;
+                } else {
+                    document.getElementById('title-details').textContent = '标题合规检测：无。请输入标题以获得完整的检测结果。';
+                }
+                
+                // 基于内容的检测逻辑
+                function analyzeContent(content) {
+                    const contentLower = content.toLowerCase();
+                    
+                    // AI内容深度状态
+                    let aiDepthStatus = '';
+                    let aiDepthClass = '';
+                    if (content.length > 800) {
+                        aiDepthStatus = '优秀，内容丰富且深度足够';
+                        aiDepthClass = 'text-green-600 font-medium mb-2';
+                    } else if (content.length > 500) {
+                        aiDepthStatus = '满足发布条件';
+                        aiDepthClass = 'text-green-600 font-medium mb-2';
+                    } else if (content.length > 300) {
+                        aiDepthStatus = '内容深度一般，建议适当扩展';
+                        aiDepthClass = 'text-yellow-600 font-medium mb-2';
+                    } else {
+                        aiDepthStatus = '内容过短，建议增加内容长度';
+                        aiDepthClass = 'text-red-600 font-medium mb-2';
+                    }
+                    document.getElementById('ai-depth-status').textContent = aiDepthStatus;
+                    document.getElementById('ai-depth-status').className = aiDepthClass;
+                    
+                    // 限流指数
+                    let limitIndex = 30;
+                    // 检查敏感词汇
+                    const sensitiveWords = ['政治', '敏感', '违规', '营销', '广告', '色情', '暴力', '赌博', '毒品', '反动'];
+                    sensitiveWords.forEach(word => {
+                        if (contentLower.includes(word)) {
+                            limitIndex += 10;
+                        }
+                    });
+                    // 检查内容长度
+                    if (content.length < 300) {
+                        limitIndex += 15;
+                    }
+                    // 检查营销词汇
+                    const marketingWords = ['购买', '优惠', '促销', '折扣', '限时', '免费', '包邮'];
+                    marketingWords.forEach(word => {
+                        if (contentLower.includes(word)) {
+                            limitIndex += 5;
+                        }
+                    });
+                    document.getElementById('limit-index').textContent = limitIndex + '%';
+                    
+                    // 限流状态
+                    let limitStatus = '';
+                    let limitStatusClass = '';
+                    let limitSuggestion = '';
+                    if (limitIndex < 40) {
+                        limitStatus = '安全';
+                        limitStatusClass = 'text-green-600';
+                        limitSuggestion = '安全，可以正常发布';
+                    } else if (limitIndex < 70) {
+                        limitStatus = '中等风险';
+                        limitStatusClass = 'text-yellow-600';
+                        limitSuggestion = '存在一定限流风险，建议修改敏感内容';
+                    } else {
+                        limitStatus = '高风险';
+                        limitStatusClass = 'text-red-600';
+                        limitSuggestion = '存在高限流风险，建议大幅修改内容';
+                    }
+                    document.getElementById('limit-status').textContent = limitStatus;
+                    document.getElementById('limit-status').className = limitStatusClass;
+                    document.getElementById('limit-suggestion').textContent = limitSuggestion;
+                    
+                    // 口水文检测
+                    let waterContent = '否';
+                    let waterContentClass = 'text-green-600';
+                    const waterMarkers = ['哈哈哈', '呵呵呵', '嘻嘻嘻', '嗯嗯', '哦哦', '哎哎', '啊', '呀', '呢', '吧'];
+                    let waterCount = 0;
+                    waterMarkers.forEach(marker => {
+                        const regex = new RegExp(marker, 'g');
+                        const matches = content.match(regex);
+                        if (matches) {
+                            waterCount += matches.length;
+                        }
+                    });
+                    if (waterCount > 5 || content.length < 200) {
+                        waterContent = '是';
+                        waterContentClass = 'text-red-600';
+                    }
+                    document.getElementById('water-content').textContent = waterContent;
+                    document.getElementById('water-content').className = waterContentClass;
+                    
+                    // 敏感内容检测
+                    document.getElementById('sensitive-index').textContent = limitIndex + '%左右';
+                    
+                    // 同质化问题检测
+                    let homogenizationIssue = '';
+                    if (content.includes('工具') && content.includes('功能')) {
+                        homogenizationIssue = '否。通过分析，该文章详细介绍了智能写作工具这款工具的功能和优势，包括AI检测、冷启动流量预测、同质化检测等多个方面，并且强调了其独特性和技术领先性。文章内容具有明确的产品介绍性质，提供了具体的工具功能说明和技术细节，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    } else if (content.includes('方法') && content.includes('技巧')) {
+                        homogenizationIssue = '否。文章内容围绕方法和技巧展开，提供了具体的实施步骤和实用建议，具有一定的独特性和实用性，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    } else if (content.includes('分析') && content.includes('研究')) {
+                        homogenizationIssue = '否。文章内容包含深入的分析和研究，提供了独特的见解和观点，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    } else {
+                        homogenizationIssue = '否。文章内容具有一定的独特性，未发现与其他现有文章在大纲和主要观点上有50%以上的相似度。因此，判断不存在明显的同质化问题。';
+                    }
+                    document.getElementById('homogenization-issue').textContent = homogenizationIssue;
+                    
+                    // 数据真实性检测
+                    let dataAuthenticity = '否';
+                    let dataAuthenticityClass = 'text-red-600';
+                    if (content.includes('数据') || content.includes('研究') || content.includes('调查') || content.includes('统计')) {
+                        if (content.includes('来源') || content.includes('参考') || content.includes('根据')) {
+                            dataAuthenticity = '是';
+                            dataAuthenticityClass = 'text-green-600';
+                        }
+                    }
+                    document.getElementById('data-authenticity').textContent = dataAuthenticity;
+                    document.getElementById('data-authenticity').className = dataAuthenticityClass;
+                    
+                    // 过度营销
+                    let overMarketing = '否';
+                    let overMarketingClass = 'text-green-600';
+                    const marketingWordsCount = marketingWords.filter(word => contentLower.includes(word)).length;
+                    if (marketingWordsCount > 3 || contentLower.includes('购买') || contentLower.includes('下单')) {
+                        overMarketing = '是';
+                        overMarketingClass = 'text-red-600';
+                    }
+                    document.getElementById('over-marketing').textContent = overMarketing;
+                    document.getElementById('over-marketing').className = overMarketingClass;
+                    
+                    // 冷启动流量预测
+                    function predictTraffic(content) {
+                        // 基础流量值
+                        let headlineBase = 500;
+                        let wechatBase = 20;
+                        let seoBase = 800;
+                        
+                        // 根据内容长度调整
+                        if (content.length > 800) {
+                            headlineBase += 500;
+                            wechatBase += 20;
+                            seoBase += 500;
+                        } else if (content.length > 500) {
+                            headlineBase += 300;
+                            wechatBase += 10;
+                            seoBase += 300;
+                        } else if (content.length > 300) {
+                            headlineBase += 100;
+                            wechatBase += 5;
+                            seoBase += 100;
+                        }
+                        
+                        // 根据内容质量调整
+                        if (content.includes('研究') || content.includes('分析') || content.includes('数据')) {
+                            headlineBase += 200;
+                            wechatBase += 10;
+                            seoBase += 300;
+                        }
+                        
+                        // 根据敏感内容调整
+                        if (limitIndex > 50) {
+                            headlineBase -= 200;
+                            wechatBase -= 10;
+                            seoBase -= 200;
+                        }
+                        
+                        // 确保流量不为负
+                        headlineBase = Math.max(headlineBase, 200);
+                        wechatBase = Math.max(wechatBase, 5);
+                        seoBase = Math.max(seoBase, 300);
+                        
+                        return {
+                            headline: `&gt; ${headlineBase}`,
+                            wechat: `&gt; ${wechatBase}`,
+                            seo: `&gt; ${seoBase}`
+                        };
+                    }
+                    
+                    const trafficPrediction = predictTraffic(content);
+                    document.getElementById('headline-traffic').innerHTML = trafficPrediction.headline;
+                    document.getElementById('wechat-traffic').innerHTML = trafficPrediction.wechat;
+                    document.getElementById('seo-traffic').innerHTML = trafficPrediction.seo;
+                }
+                
+                // 分析内容
+                analyzeContent(content);
+                
+                // 生成优化建议
+                const tips = [
+                    '增加更多具体案例和数据支持：添加真实的案例和数据，增强内容的说服力和可信度。',
+                    '优化标题和开头，提高点击率：使用更有吸引力的标题，开头设置悬念或问题，吸引读者继续阅读。',
+                    '增加互动元素，提高用户参与度：在内容中加入问题、投票或评论引导，鼓励用户互动。',
+                    '优化关键词分布，提升SEO效果：在标题、开头、正文和结尾合理分布关键词，提高搜索引擎排名。',
+                    '保持内容结构清晰，易于阅读：使用小标题、分段、 bullet points 等格式，提高内容的可读性。',
+                    '检查并移除可能的敏感内容：避免使用政治敏感词汇，不涉及违法违规内容，保持内容积极健康。',
+                    '平衡营销内容与实用信息的比例：将营销内容控制在30%以内，增加更多有价值的实用信息。',
+                    '确保标题符合平台规范：避免使用夸大、误导性词汇，保持标题真实准确。',
+                    '增加情感表达和个人观点：减少机械感，增加人性化表达，让内容更具亲和力。',
+                    '优化内容长度和节奏：根据平台特性调整内容长度，保持合适的阅读节奏，避免冗长或过于简短。'
+                ];
+                
+                let tipsHtml = '';
+                tips.forEach(tip => {
+                    tipsHtml += `<li>${tip}</li>`;
+                });
+                document.getElementById('optimization-tips').innerHTML = tipsHtml;
+                
+                // 显示结果
+                document.getElementById('analysis-results').classList.remove('hidden');
+                
+                // 恢复按钮状态
+                this.innerHTML = '<i class="fa fa-analytics mr-2"></i> 开始分析';
+                this.disabled = false;
+                
+                // 滚动到结果区域
+                document.getElementById('analysis-results').scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
+        });
+        
+        // 清空按钮
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('analysis-results').classList.add('hidden');
+        });
+        
+        // 开始按钮
+        document.getElementById('start-btn').addEventListener('click', function() {
+            document.getElementById('title').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+
+        
+
+        
+        // 等待DOM完全加载
+        window.onload = function() {
+            console.log('Window loaded, initializing all features...');
+            
+            // 标签切换功能
+            initTabSwitching();
+            
+            // 初始化Markdown编辑器
+            initMarkdownEditor();
+            
+            // 初始化分段检测
+            initSegmentDetection();
+        };
+        
+        // 初始化标签切换
+        function initTabSwitching() {
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            console.log('Tab links found:', tabLinks.length);
+            console.log('Tab contents found:', tabContents.length);
+            
+            // 确保所有标签内容都被正确隐藏，除了默认的内容优化标签
+            tabContents.forEach(content => {
+                if (content.id !== 'content-optimizer') {
+                    content.classList.add('hidden');
+                }
+            });
+            
+            // 为每个标签链接添加点击事件
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const tabId = this.getAttribute('data-tab');
+                    console.log('Tab clicked:', tabId);
+                    
+                    // 移除所有标签的活跃状态
+                    tabLinks.forEach(l => {
+                        l.classList.remove('text-primary', 'font-medium');
+                        l.classList.add('text-gray-600', 'hover:text-primary');
+                    });
+                    
+                    // 添加当前标签的活跃状态
+                    this.classList.add('text-primary', 'font-medium');
+                    this.classList.remove('text-gray-600', 'hover:text-primary');
+                    
+                    // 隐藏所有内容
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    // 显示当前内容
+                    const tabContent = document.getElementById(tabId);
+                    if (tabContent) {
+                        tabContent.classList.remove('hidden');
+                        // 滚动到标签内容的顶部
+                        tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        console.log('Tab content shown:', tabId);
+                    }
+                });
+            });
+        }
+        
+        // 全局变量
+        let mdInput, mdPreview;
+        
+        // 初始化Markdown编辑器
+        function initMarkdownEditor() {
+            console.log('=== Initializing Markdown Editor ===');
+            
+            // 直接选择所有相关元素
+            mdInput = document.getElementById('md-input');
+            mdPreview = document.getElementById('md-preview');
+            const mdButtons = document.querySelectorAll('.md-btn');
+            const formatButtons = document.querySelectorAll('.format-btn');
+            const colorButtons = document.querySelectorAll('.color-btn');
+            const wechatMode = document.getElementById('wechat-mode');
+            const widthSlider = document.getElementById('width-slider');
+            const widthValue = document.getElementById('width-value');
+            const heightSlider = document.getElementById('height-slider');
+            const heightValue = document.getElementById('height-value');
+            const heightOverflow = document.getElementById('height-overflow');
+            const fontSelect = document.getElementById('font-select');
+            const fontSizeSlider = document.getElementById('font-size-slider');
+            
+            // 检查所有元素是否存在
+            console.log('mdInput:', mdInput);
+            console.log('mdPreview:', mdPreview);
+            console.log('mdButtons count:', mdButtons.length);
+            console.log('formatButtons count:', formatButtons.length);
+            console.log('colorButtons count:', colorButtons.length);
+            console.log('wechatMode:', wechatMode);
+            console.log('widthSlider:', widthSlider);
+            console.log('widthValue:', widthValue);
+            console.log('heightSlider:', heightSlider);
+            console.log('heightValue:', heightValue);
+            console.log('heightOverflow:', heightOverflow);
+            console.log('fontSelect:', fontSelect);
+            console.log('fontSizeSlider:', fontSizeSlider);
+            
+            if (!mdInput || !mdPreview) {
+                console.error('Markdown editor main elements not found!');
+                return;
+            }
+            
+            // 初始渲染
+            console.log('Performing initial render...');
+            renderMarkdown();
+            
+            // 输入变化时实时渲染
+            mdInput.addEventListener('input', function() {
+                console.log('Input changed, rendering...');
+                renderMarkdown();
+            });
+            
+            // 工具栏按钮和格式选择按钮使用内联onclick事件处理程序
+            console.log('Markdown editor buttons using inline onclick handlers');
+            
+            // 颜色选择按钮点击事件
+            console.log('Adding click events to colorButtons...');
+            colorButtons.forEach((button, index) => {
+                console.log('Adding event to colorButton', index, button.getAttribute('data-color'));
+                button.addEventListener('click', function() {
+                    const color = this.getAttribute('data-color');
+                    console.log('colorButton clicked:', color);
+                    mdPreview.style.color = color;
+                });
+            });
+            
+            // 公众号模式切换
+            if (wechatMode) {
+                console.log('Adding change event to wechatMode...');
+                wechatMode.addEventListener('change', function() {
+                    console.log('wechatMode changed:', this.checked);
+                    if (this.checked) {
+                        mdPreview.classList.add('wechat-mode');
+                    } else {
+                        mdPreview.classList.remove('wechat-mode');
+                    }
+                    renderMarkdown();
+                });
+            }
+            
+            // 尺寸调整事件
+            if (widthSlider && widthValue) {
+                console.log('Adding input event to widthSlider...');
+                widthSlider.addEventListener('input', function() {
+                    widthValue.textContent = this.value + '%';
+                    mdPreview.style.width = this.value + '%';
+                    console.log('Width changed:', this.value + '%');
+                });
+            }
+            
+            if (heightSlider && heightValue) {
+                console.log('Adding input event to heightSlider...');
+                heightSlider.addEventListener('input', function() {
+                    heightValue.textContent = this.value + '%';
+                    mdPreview.style.height = this.value + '%';
+                    console.log('Height changed:', this.value + '%');
+                });
+            }
+            
+            if (heightOverflow) {
+                console.log('Adding change event to heightOverflow...');
+                heightOverflow.addEventListener('change', function() {
+                    if (this.checked) {
+                        mdPreview.style.overflowY = 'hidden';
+                    } else {
+                        mdPreview.style.overflowY = 'auto';
+                    }
+                    console.log('Height overflow changed:', this.checked);
+                });
+            }
+            
+            // 字体设置事件
+            if (fontSelect) {
+                console.log('Adding change event to fontSelect...');
+                fontSelect.addEventListener('change', function() {
+                    mdPreview.style.fontFamily = this.value;
+                    console.log('Font family changed:', this.value);
+                });
+            }
+            
+            if (fontSizeSlider) {
+                console.log('Adding input event to fontSizeSlider...');
+                fontSizeSlider.addEventListener('input', function() {
+                    mdPreview.style.fontSize = this.value + 'px';
+                    console.log('Font size changed:', this.value + 'px');
+                });
+            }
+            
+            console.log('=== Markdown Editor initialization completed ===');
+        }
+        
+        // Markdown渲染函数
+        function renderMarkdown() {
+            if (!mdInput || !mdPreview) {
+                console.error('Markdown editor elements not initialized!');
+                return;
+            }
+            const markdown = mdInput.value;
+            const html = parseMarkdown(markdown);
+            mdPreview.innerHTML = html;
+        }
+        
+        // 简单的Markdown解析
+        function parseMarkdown(markdown) {
+            // 标题
+            markdown = markdown.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+            markdown = markdown.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            markdown = markdown.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            markdown = markdown.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // 粗体、斜体、下划线和删除线
+            markdown = markdown.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
+            markdown = markdown.replace(/\*(.*)\*/gim, '<em>$1</em>');
+            markdown = markdown.replace(/__(.*)__/gim, '<u>$1</u>');
+            markdown = markdown.replace(/~~(.*)~~/gim, '<del>$1</del>');
+            
+            // 无序列表
+            markdown = markdown.replace(/(^\* .*$\n?)+/gim, function(match) {
+                return '<ul>' + match.replace(/^\* (.*$)/gim, '<li>$1</li>') + '</ul>';
+            });
+            
+            // 有序列表
+            markdown = markdown.replace(/(^\d+\. .*$\n?)+/gim, function(match) {
+                return '<ol>' + match.replace(/^\d+\. (.*$)/gim, '<li>$1</li>') + '</ol>';
+            });
+            
+            // 链接
+            markdown = markdown.replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, '<a href="$2" target="_blank">$1</a>');
+            
+            // 图片
+            markdown = markdown.replace(/!\[([^\]]*)\]\(([^\)]+)\)/gim, '<img src="$2" alt="$1" class="max-w-full">');
+            
+            // 行内代码
+            markdown = markdown.replace(/`(.*)`/gim, '<code>$1</code>');
+            
+            // 代码块
+            markdown = markdown.replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>');
+            
+            // 引用
+            markdown = markdown.replace(/(^> .*$\n?)+/gim, function(match) {
+                return '<blockquote>' + match.replace(/^> (.*$)/gim, '$1') + '</blockquote>';
+            });
+            
+            // 水平线
+            markdown = markdown.replace(/^---$/gim, '<hr>');
+            
+            // 段落
+            markdown = markdown.replace(/^(?!<h[1-6]>)(?!<ul>)(?!<ol>)(?!<li>)(?!<blockquote>)(?!<pre>)(?!<hr>)(.*$)/gim, '<p>$1</p>');
+            
+            return markdown;
+        }
+        
+        // 插入Markdown格式
+        function insertMarkdown(command) {
+            if (!mdInput) {
+                console.error('mdInput not initialized!');
+                return;
+            }
+            const start = mdInput.selectionStart;
+            const end = mdInput.selectionEnd;
+            const selectedText = mdInput.value.substring(start, end);
+            let insertText = '';
+            
+            switch(command) {
+                case 'h1':
+                    insertText = `# ${selectedText || '标题'}`;
+                    break;
+                case 'h2':
+                    insertText = `## ${selectedText || '副标题'}`;
+                    break;
+                case 'h3':
+                    insertText = `### ${selectedText || '小标题'}`;
+                    break;
+                case 'bold':
+                    insertText = `**${selectedText || '粗体文本'}**`;
+                    break;
+                case 'italic':
+                    insertText = `*${selectedText || '斜体文本'}*`;
+                    break;
+                case 'underline':
+                    insertText = `__${selectedText || '下划线文本'}__`;
+                    break;
+                case 'strikethrough':
+                    insertText = `~~${selectedText || '删除线文本'}~~`;
+                    break;
+                case 'list':
+                    insertText = `* ${selectedText || '列表项'}`;
+                    break;
+                case 'numbered-list':
+                    insertText = `1. ${selectedText || '列表项'}`;
+                    break;
+                case 'link':
+                    insertText = `[${selectedText || '链接文本'}](https://example.com)`;
+                    break;
+                case 'image':
+                    insertText = `![${selectedText || '图片描述'}](https://example.com/image.jpg)`;
+                    break;
+                case 'code':
+                    insertText = `\`${selectedText || '代码'}\``;
+                    break;
+                case 'code-block':
+                    insertText = `\`\`\`\n${selectedText || '代码块'}\n\`\`\``;
+                    break;
+                case 'quote':
+                    insertText = `> ${selectedText || '引用文本'}`;
+                    break;
+                case 'table':
+                    insertText = `| 表头1 | 表头2 | 表头3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |`;
+                    break;
+                case 'horizontal-rule':
+                    insertText = `---`;
+                    break;
+            }
+            
+            mdInput.value = mdInput.value.substring(0, start) + insertText + mdInput.value.substring(end);
+            mdInput.focus();
+            mdInput.selectionStart = start + insertText.length;
+            mdInput.selectionEnd = start + insertText.length;
+            
+            renderMarkdown();
+        }
+        
+        // 应用格式
+        function applyFormat(format) {
+            if (!mdPreview) {
+                console.error('mdPreview not initialized!');
+                return;
+            }
+            // 移除所有格式类
+            mdPreview.className = 'w-full border border-gray-300 rounded-lg p-4 h-[500px] bg-gray-50 overflow-y-auto';
+            
+            // 添加选中的格式类
+            if (format !== 'default') {
+                mdPreview.classList.add(`format-${format}`);
+            }
+            
+            // 重新渲染
+            renderMarkdown();
+        }
+        
+        // 复制Markdown内容
+        function copyMarkdownContent() {
+            if (!mdInput) {
+                console.error('mdInput not initialized!');
+                return;
+            }
+            const content = mdInput.value;
+            if (!content) {
+                alert('没有内容可复制');
+                return;
+            }
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(content)
+                .then(() => {
+                    alert('复制成功！');
+                })
+                .catch(err => {
+                    alert('复制失败，请手动复制');
+                    console.error('复制失败:', err);
+                });
+        }
+        
+        // 导出Markdown内容
+        function exportMarkdownContent() {
+            if (!mdInput) {
+                console.error('mdInput not initialized!');
+                return;
+            }
+            const content = mdInput.value;
+            if (!content) {
+                alert('没有内容可导出');
+                return;
+            }
+            
+            // 创建Blob对象
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            
+            // 创建下载链接
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `markdown-${new Date().toISOString().slice(0, 10)}.md`;
+            document.body.appendChild(a);
+            
+            // 触发下载
+            a.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+        
+        // 生成饼图
+        function generatePieChart(elementId, aiPercentage) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            element.innerHTML = '';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 160;
+            canvas.height = 160;
+            element.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = 80;
+            const centerY = 80;
+            const radius = 60;
+            
+            // 绘制人工部分
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI * (1 - aiPercentage / 100));
+            ctx.closePath();
+            ctx.fillStyle = '#3b82f6';
+            ctx.fill();
+            
+            // 绘制AI部分
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, 2 * Math.PI * (1 - aiPercentage / 100), 2 * Math.PI);
+            ctx.closePath();
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+            
+            // 绘制中心白色圆
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            
+            // 绘制标签
+            ctx.fillStyle = '#1e293b';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AI', centerX, centerY - 10);
+            ctx.fillText(aiPercentage + '%', centerX, centerY + 10);
+        }
+        
+        // 生成环形图
+        function generateDoughnutChart(elementId, score) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            element.innerHTML = '';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 160;
+            canvas.height = 160;
+            element.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = 80;
+            const centerY = 80;
+            const outerRadius = 60;
+            const innerRadius = 40;
+            
+            // 绘制背景圆环
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+            ctx.arc(centerX, centerY, innerRadius, 2 * Math.PI, 0, true);
+            ctx.closePath();
+            ctx.fillStyle = '#e5e7eb';
+            ctx.fill();
+            
+            // 绘制得分圆环
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerRadius, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * score / 100);
+            ctx.arc(centerX, centerY, innerRadius, -Math.PI / 2 + 2 * Math.PI * score / 100, -Math.PI / 2, true);
+            ctx.closePath();
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+        }
+        
+        // 生成随机数的辅助函数
+        function getRandom(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        // HTML转义函数，防止乱码
+        function escapeHTML(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        
+        // 根据内容计算AI指数
+        function calculateAIIndex(content) {
+            // 基础AI指数 - 使用更大的随机基础值
+            let baseIndex = getRandom(10, 30); // 10-30%
+            
+            // 根据内容长度调整
+            if (content.length < 300) {
+                baseIndex += getRandom(5, 20); // 短内容AI可能性更高
+            } else if (content.length > 1000) {
+                baseIndex -= getRandom(3, 13); // 长内容更可能是人工撰写
+            }
+            
+            // 根据词汇特征调整
+            const aiKeywords = ['人工智能', 'AI', '机器学习', '算法', '数据', '分析', '技术', '系统'];
+            const aiKeywordCount = aiKeywords.reduce((count, keyword) => {
+                return count + (content.includes(keyword) ? 1 : 0);
+            }, 0);
+            
+            baseIndex += aiKeywordCount * getRandom(1, 3); // 每包含一个AI相关词汇，指数增加1-3%
+            
+            // 根据句式特征调整
+            const complexSentences = content.match(/。+|！+|？+/g) || [];
+            if (complexSentences.length > 10) {
+                baseIndex -= getRandom(3, 10); // 句子结构复杂，更可能是人工撰写
+            }
+            
+            // 根据内容复杂度调整
+            const punctuationMarks = content.match(/[，。！？；：""（）【】]/g) || [];
+            if (punctuationMarks.length > 20) {
+                baseIndex -= getRandom(2, 7); // 标点丰富，更可能是人工撰写
+            }
+            
+            // 添加更大的随机波动
+            baseIndex += getRandom(-10, 10); // -10到10的随机值
+            
+            // 确保指数在合理范围内
+            return Math.max(5, Math.min(85, Math.round(baseIndex)));
+        }
+        
+        // 根据内容和AI指数计算文章得分
+        function calculateContentScore(content, aiIndex) {
+            // 基础得分 - 调整范围，避免过于接近100
+            let baseScore = getRandom(70, 85); // 70-85
+            
+            // 根据内容长度调整
+            if (content.length < 200) {
+                baseScore -= getRandom(5, 15); // 内容过短
+            } else if (content.length > 800) {
+                baseScore += getRandom(3, 10); // 内容丰富
+            }
+            
+            // 根据AI指数调整
+            if (aiIndex > 60) {
+                baseScore -= getRandom(8, 25); // AI痕迹过重
+            } else if (aiIndex < 20) {
+                baseScore += getRandom(3, 10); // 人工撰写痕迹明显
+            }
+            
+            // 根据词汇多样性调整
+            const uniqueWords = new Set(content.split(/\s+/).filter(word => word.length > 1));
+            const wordDiversity = uniqueWords.size / (content.split(/\s+/).length || 1);
+            if (wordDiversity > 0.8) {
+                baseScore += getRandom(3, 10); // 词汇丰富
+            } else if (wordDiversity < 0.4) {
+                baseScore -= getRandom(3, 10); // 词汇单一
+            }
+            
+            // 根据句子长度调整
+            const sentences = content.split(/[。！？]/).filter(s => s.trim() !== '');
+            const avgSentenceLength = sentences.length > 0 ? content.length / sentences.length : 0;
+            if (avgSentenceLength > 50) {
+                baseScore -= getRandom(3, 8); // 句子过长
+            } else if (avgSentenceLength > 15 && avgSentenceLength < 40) {
+                baseScore += getRandom(3, 8); // 句子长度适中
+            }
+            
+            // 添加随机波动
+            baseScore += getRandom(-8, 8); // -8到8的随机值
+            
+            // 确保得分在合理范围内，最高不超过95
+            return Math.max(60, Math.min(95, Math.round(baseScore)));
+        }
+        
+        // 分析文章主题
+        function analyzeTopic(content) {
+            const lowerContent = content.toLowerCase();
+            
+            // 体育主题
+            if (lowerContent.includes('比赛') || lowerContent.includes('体育') || lowerContent.includes('竞技') || lowerContent.includes('斯诺克') || lowerContent.includes('胜负') || lowerContent.includes('运动员') || lowerContent.includes('球场') || lowerContent.includes('训练')) {
+                return 'sports';
+            }
+            // 技术主题
+            else if (lowerContent.includes('技术') || lowerContent.includes('浏览器') || lowerContent.includes('开发') || lowerContent.includes('工具') || lowerContent.includes('科技') || lowerContent.includes('编程') || lowerContent.includes('软件') || lowerContent.includes('硬件')) {
+                return 'technology';
+            }
+            // 工作主题
+            else if (lowerContent.includes('工作') || lowerContent.includes('职场') || lowerContent.includes('效率') || lowerContent.includes('任务') || lowerContent.includes('项目') || lowerContent.includes('团队') || lowerContent.includes('办公室')) {
+                return 'work';
+            }
+            // 教育主题
+            else if (lowerContent.includes('教育') || lowerContent.includes('学习') || lowerContent.includes('学校') || lowerContent.includes('老师') || lowerContent.includes('学生') || lowerContent.includes('知识') || lowerContent.includes('读书')) {
+                return 'education';
+            }
+            // 健康主题
+            else if (lowerContent.includes('健康') || lowerContent.includes('身体') || lowerContent.includes('运动') || lowerContent.includes('饮食') || lowerContent.includes('疾病') || lowerContent.includes('医疗') || lowerContent.includes('锻炼')) {
+                return 'health';
+            }
+            // 生活主题（默认）
+            else {
+                return 'life';
+            }
+        }
+        
+        // 增强版金句库 - 按主题分类
+        const goldenSentences = {
+            'sports': [
+                '体育精神在于坚持和拼搏，不放弃每一个机会。',
+                '胜利属于那些在关键时刻保持冷静的人。',
+                '每一场比赛都是一次成长的机会，无论输赢。',
+                '真正的竞技精神不是击败对手，而是超越自己。',
+                '体育教会我们如何面对胜利与失败，这是人生的重要一课。',
+                '在赛场上，每一分努力都不会白费，每一次坚持都有意义。',
+                '体育不仅是身体的锻炼，更是意志的磨练。',
+                '比赛的魅力在于不确定性，不到最后一刻，永远不要放弃。',
+                '尊重对手，尊重比赛，这是体育精神的核心。',
+                '胜利不是终点，失败也不是终结，重要的是过程中的成长。'
+            ],
+            'technology': [
+                '科技改变生活，创新引领未来。',
+                '好的工具能够让工作事半功倍。',
+                '技术的价值在于解决实际问题，提高效率。',
+                '不断学习新技术，是保持竞争力的关键。',
+                '科技的发展让我们的生活更加便捷和丰富。',
+                '技术是一把双刃剑，关键在于如何运用它。',
+                '创新是技术发展的动力，也是社会进步的源泉。',
+                '在数字化时代，掌握技术就是掌握未来。',
+                '技术的进步不仅改变了我们的生活方式，也改变了我们的思维方式。',
+                '好的技术应该是简单易用的，能够真正解决用户的问题。'
+            ],
+            'life': [
+                '实践是检验真理的唯一标准。',
+                '细节决定成败。',
+                '态度决定一切。',
+                '行动胜于言语。',
+                '机会留给有准备的人。',
+                '一分耕耘，一分收获。',
+                '学无止境。',
+                '三人行，必有我师焉。',
+                '生活不是缺少美，而是缺少发现美的眼睛。',
+                '人生没有彩排，每一天都是现场直播。',
+                '乐观的人在困难中看到机会，悲观的人在机会中看到困难。',
+                '简单的事情重复做，你就是专家；重复的事情用心做，你就是赢家。',
+                '人生就像一场旅行，重要的不是目的地，而是沿途的风景和看风景的心情。',
+                '真正的快乐不是拥有更多，而是计较更少。',
+                '成功不是终点，失败也不是末日，最重要的是继续前进的勇气。'
+            ],
+            'work': [
+                '工欲善其事，必先利其器。',
+                '磨刀不误砍柴工。',
+                '台上一分钟，台下十年功。',
+                '时间就是金钱。',
+                '效率就是生命。',
+                '细节决定成败，态度决定高度。',
+                '没有最好，只有更好。',
+                '团队合作是成功的关键。',
+                '机会总是留给有准备的人。',
+                '成功不是一蹴而就的，需要长期的积累和努力。',
+                '工作不仅仅是为了谋生，更是为了实现自我价值。',
+                '良好的时间管理是提高工作效率的关键。',
+                '沟通是解决问题的桥梁，也是团队合作的基础。',
+                '持续学习是保持竞争力的重要手段。',
+                '专注是成功的秘诀，只有专注才能把事情做到极致。'
+            ],
+            'education': [
+                '教育是点燃火焰，而不是填满容器。',
+                '知识改变命运，学习成就未来。',
+                '活到老，学到老。',
+                '教育的目的不是培养完美的人，而是培养不断追求完美的人。',
+                '学习不仅是获取知识，更是培养思维能力和解决问题的能力。',
+                '教育是一项长期投资，其回报是无法用金钱衡量的。',
+                '好的教育应该因材施教，尊重每个学生的个性和特长。',
+                '学习是一个持续的过程，没有终点。',
+                '教育的真正目的是培养独立思考的能力。',
+                '知识是人类进步的阶梯，教育是攀登阶梯的助力。'
+            ],
+            'health': [
+                '健康是人生最大的财富。',
+                '身体是革命的本钱。',
+                '早睡早起身体好。',
+                '生命在于运动。',
+                '健康的身体是幸福生活的基础。',
+                '良好的饮食习惯是健康的关键。',
+                '心理健康和身体健康同样重要。',
+                '预防胜于治疗。',
+                '适当的运动是保持健康的最佳方式。',
+                '健康不是一切，但没有健康就没有一切。'
+            ]
+        };
+        
+        // 增强版经验小故事库 - 按主题分类
+        const stories = {
+            'sports': [
+                '记得我读书时参加校运会，虽然一开始状态不好，但我没有放弃，坚持训练，最终在决赛中取得了好成绩。这让我明白，只要坚持，总有机会逆袭。',
+                '我有个朋友是职业运动员，他告诉我，每一次失败都是宝贵的经验，重要的是从中学习，不断改进。',
+                '作为一名体育爱好者，我深知竞技体育的魅力在于不确定性，不到最后一刻，永远不知道结果如何。',
+                '我曾经观看过一场精彩的斯诺克比赛，选手在落后的情况下，凭借冷静的心态和精准的技术，最终实现了逆转。这让我明白，心态在关键时刻的重要性。',
+                '上大学时，我参加了学院的篮球队，虽然我们队实力不强，但我们团队配合默契，最终在比赛中战胜了实力更强的对手。这让我明白了团队合作的重要性。',
+                '我有个亲戚是马拉松选手，他告诉我，跑马拉松最重要的不是速度，而是坚持。每一次比赛，他都会设定一个小目标，一步一步地完成，最终到达终点。'
+            ],
+            'technology': [
+                '记得我刚开始使用Edge浏览器时，也遇到过一些问题，但通过探索和学习，逐渐掌握了它的使用技巧，现在它已经成为我工作的得力助手。',
+                '作为一名前端开发者，我经常需要在不同浏览器间测试网站，好的浏览器工具能够大大提高我的工作效率。',
+                '我的一个同事通过优化工作流程和使用合适的工具，将工作效率提高了50%，这让我意识到工具选择的重要性。',
+                '在使用各种开发工具的过程中，我发现适合自己的工具能够让工作更加顺畅，减少很多不必要的麻烦。',
+                '我曾经参与过一个大型项目，团队成员分散在不同的城市，通过使用协作工具，我们成功地完成了项目，这让我感受到了技术的力量。',
+                '有一次，我遇到了一个技术难题，尝试了多种方法都没有解决，最后通过查阅资料和向同事请教，终于找到了解决方案。这让我明白，在技术领域，持续学习和合作是非常重要的。'
+            ],
+            'life': [
+                '记得我刚开始工作时，遇到了很多挑战，但通过不断学习和努力，逐渐适应了工作节奏，现在已经能够从容应对各种任务。',
+                '我有个朋友总是保持积极的态度面对生活中的困难，他告诉我，心态决定一切，只要保持乐观，没有过不去的坎。',
+                '作为一个生活观察者，我发现那些成功的人往往都有一个共同特点：他们善于从失败中学习，不断调整自己的策略。',
+                '我曾经在人生低谷时得到了朋友的鼓励，这让我重新振作起来，最终走出了困境。这让我明白，朋友的支持是多么重要。',
+                '去年，我决定学习一门新技能，一开始遇到了很多困难，但我坚持了下来，现在已经能够熟练掌握。这让我明白，只要有决心，没有学不会的东西。',
+                '我有个邻居，虽然年纪很大，但他总是保持学习的热情，每天都会读书看报，学习新事物。这让我明白，学习是一辈子的事情。'
+            ],
+            'work': [
+                '记得我刚开始工作时，总是手忙脚乱，后来通过制定计划和优化工作流程，逐渐提高了工作效率，现在能够更加从容地完成任务。',
+                '我有个同事非常注重细节，他告诉我，细节决定成败，尤其是在重要的项目中，任何一个小错误都可能导致严重的后果。',
+                '作为一名职场人，我深知时间管理的重要性，合理安排时间能够让工作更加高效，减少压力。',
+                '在工作中，我学会了团队合作的重要性，一个人的力量是有限的，团队的协作能够创造更大的价值。',
+                '我曾经参与过一个紧急项目，团队成员齐心协力，加班加点，最终按时完成了任务。这让我感受到了团队的力量。',
+                '我的一位领导告诉我，工作中遇到困难时，不要轻易放弃，要学会分析问题，寻找解决办法。这让我在后来的工作中受益良多。'
+            ],
+            'education': [
+                '记得我上高中时，数学成绩一直不好，但我的数学老师没有放弃我，而是耐心地给我讲解，最终我的数学成绩有了很大的提高。这让我明白，好的老师对学生的影响是巨大的。',
+                '大学时，我参加了一个读书俱乐部，通过与同学们的交流和讨论，我的视野得到了很大的开阔，思维也更加活跃。这让我明白，学习不仅仅是个人的事情，也需要与他人的交流和分享。',
+                '我有个朋友是教师，他告诉我，教育不仅仅是传授知识，更是培养学生的思维能力和道德品质。这让我对教育有了更深的理解。',
+                '我曾经参加过一个培训课程，老师采用了互动式教学方法，让我们在实践中学习，这种学习方式让我印象深刻，也让我学到了很多实用的知识。'
+            ],
+            'health': [
+                '记得我以前经常熬夜，导致身体状况不好，后来我开始调整作息时间，坚持锻炼，现在身体状况有了很大的改善。这让我明白，良好的生活习惯对健康的重要性。',
+                '我有个亲戚是医生，他告诉我，预防疾病比治疗疾病更重要，平时要注意饮食健康，适量运动，保持良好的心态。',
+                '去年，我开始每天坚持晨跑，不仅身体变好了，精神状态也更加饱满，工作效率也提高了。这让我感受到了运动的好处。',
+                '我曾经因为工作压力大而导致失眠，后来通过调整工作节奏，学习放松技巧，睡眠质量有了很大的改善。这让我明白，心理健康和身体健康同样重要。'
+            ]
+        };
+        
+        // 存储文章内容的哈希值和对应的检测结果（全局变量）
+        let contentHash = '';
+        let cachedResults = {
+            segments: [],
+            aiIndex: 0,
+            contentScore: 0
+        };
+        
+        // 分段检测功能
+        function initSegmentDetection() {
+            console.log('=== Initializing Segment Detection ===');
+            
+            const detectBtn = document.getElementById('detect-btn');
+            const clearBtn = document.getElementById('clear-segment-btn');
+            const importBtn = document.getElementById('import-segment-btn');
+            const segmentContent = document.getElementById('segment-content');
+            
+            console.log('detectBtn:', detectBtn);
+            console.log('clearBtn:', clearBtn);
+            console.log('importBtn:', importBtn);
+            console.log('segmentContent:', segmentContent);
+            
+            // 计算字符串的哈希值
+            function getHash(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return hash.toString();
+            }
+            
+            if (detectBtn) {
+                detectBtn.addEventListener('click', function() {
+                    const content = segmentContent.value.trim();
+                    if (!content) {
+                        alert('请输入内容');
+                        return;
+                    }
+                    
+                    // 计算当前内容的哈希值
+                    const currentHash = getHash(content);
+                    
+                    // 显示加载状态
+                    this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 检测中...';
+                    this.disabled = true;
+                    
+                    // 模拟检测过程
+                    setTimeout(() => {
+                        let segments, aiIndex, contentScore;
+                        
+                        // 检查是否是同一篇文章
+                        if (currentHash === contentHash) {
+                            // 使用缓存的结果
+                            segments = cachedResults.segments;
+                            aiIndex = cachedResults.aiIndex;
+                            contentScore = cachedResults.contentScore;
+                            console.log('Using cached results for the same content');
+                        } else {
+                            // 新文章，重新检测
+                            segments = splitIntoSegments(content);
+                            
+                            // 计算AI指数和文章得分
+                            console.log('Calculating AI index and content score...');
+                            aiIndex = calculateAIIndex(content);
+                            contentScore = calculateContentScore(content, aiIndex);
+                            console.log('AI Index:', aiIndex, 'Content Score:', contentScore);
+                            
+                            // 生成并缓存每个段落的AI/人工判断结果
+                            const segmentAIDetections = segments.map(() => Math.random() > 0.5);
+                            
+                            // 更新缓存
+                            contentHash = currentHash;
+                            cachedResults = {
+                                segments: segments,
+                                aiIndex: aiIndex,
+                                contentScore: contentScore,
+                                segmentAIDetections: segmentAIDetections
+                            };
+                        }
+                        
+                        // 先显示分段检测结果（显示segment-results区域）
+                        displaySegmentResults(segments, true, content);
+                        
+                        // 使用setTimeout确保DOM有时间渲染
+                        setTimeout(() => {
+                            // 更新AI指数和文章得分的显示
+                            const aiIndexElement = document.getElementById('segment-ai-index-value');
+                            const contentScoreElement = document.getElementById('segment-content-score-value');
+                            
+                            console.log('aiIndexElement:', aiIndexElement);
+                            console.log('contentScoreElement:', contentScoreElement);
+                            
+                            if (aiIndexElement && contentScoreElement) {
+                                // 强制更新DOM元素
+                                console.log('Before update - AI Index:', aiIndexElement.innerHTML);
+                                console.log('Before update - Content Score:', contentScoreElement.innerHTML);
+                                
+                                // 直接设置新内容
+                                aiIndexElement.innerHTML = aiIndex + '%';
+                                contentScoreElement.innerHTML = contentScore;
+                                
+                                console.log('After update - AI Index:', aiIndexElement.innerHTML);
+                                console.log('After update - Content Score:', contentScoreElement.innerHTML);
+                                
+                                // 生成图表
+                                generatePieChart('segment-ai-index-chart', aiIndex);
+                                generateDoughnutChart('segment-content-score-chart', contentScore);
+                            }
+                        }, 200);
+                        
+                        // 恢复按钮状态
+                        this.innerHTML = '<i class="fa fa-search mr-2"></i> 开始检测';
+                        this.disabled = false;
+                    }, 1000);
+                });
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    segmentContent.value = '';
+                    document.getElementById('segment-results').classList.add('hidden');
+                });
+            }
+            
+            if (importBtn) {
+                importBtn.addEventListener('click', function() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.txt';
+                    input.onchange = function(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                segmentContent.value = e.target.result;
+                            };
+                            reader.readAsText(file);
+                        }
+                    };
+                    input.click();
+                });
+            }
+            
+            // 复制内容按钮
+            const copyBtn = document.getElementById('copy-segment-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    const content = segmentContent.value.trim();
+                    if (!content) {
+                        alert('没有内容可复制');
+                        return;
+                    }
+                    
+                    // 复制到剪贴板
+                    navigator.clipboard.writeText(content)
+                        .then(() => {
+                            // 显示复制成功的提示
+                            const originalText = this.innerHTML;
+                            this.innerHTML = '<i class="fa fa-check mr-2"></i> 复制成功';
+                            this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                            this.classList.add('bg-green-600', 'hover:bg-green-700');
+                            
+                            // 2秒后恢复按钮状态
+                            setTimeout(() => {
+                                this.innerHTML = originalText;
+                                this.classList.remove('bg-green-600', 'hover:bg-green-700');
+                                this.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            alert('复制失败，请手动复制');
+                            console.error('复制失败:', err);
+                        });
+                });
+            }
+            
+            console.log('=== Segment Detection initialization completed ===');
+        }
+        
+        // 分割内容为段落
+        function splitIntoSegments(content) {
+            // 按换行符分割
+            const lines = content.split('\n');
+            const segments = [];
+            let currentSegment = '';
+            
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine === '') {
+                    // 空行作为段落分隔符
+                    if (currentSegment.trim()) {
+                        segments.push(currentSegment.trim());
+                        currentSegment = '';
+                    }
+                } else {
+                    // 每个非空行作为一个段落
+                    if (currentSegment.trim()) {
+                        segments.push(currentSegment.trim());
+                    }
+                    currentSegment = trimmedLine;
+                }
+            });
+            
+            if (currentSegment.trim()) {
+                segments.push(currentSegment.trim());
+            }
+            
+            return segments;
+        }
+        
+        // 显示分段检测结果
+        function displaySegmentResults(segments, showResults = true, content = '') {
+            const originalContent = document.getElementById('original-content');
+            const detectionContent = document.getElementById('detection-content');
+            
+            // 清空之前的结果
+            originalContent.innerHTML = '';
+            detectionContent.innerHTML = '';
+            
+            // 显示原文
+            segments.forEach((segment, index) => {
+                const segmentElement = document.createElement('div');
+                segmentElement.className = 'p-3 bg-white rounded-lg shadow-sm mb-3';
+                // 对内容进行HTML转义，防止乱码
+                segmentElement.innerHTML = `<p class="text-gray-800">${escapeHTML(segment)}</p>`;
+                originalContent.appendChild(segmentElement);
+                
+                // 生成检测结果
+                const detectionElement = document.createElement('div');
+                detectionElement.className = 'p-3 bg-white rounded-lg shadow-sm mb-3';
+                
+                // 使用缓存的AI检测结果或生成新的结果
+                let isAI;
+                if (cachedResults && cachedResults.segmentAIDetections && cachedResults.segmentAIDetections[index] !== undefined) {
+                    isAI = cachedResults.segmentAIDetections[index];
+                } else {
+                    isAI = Math.random() > 0.5;
+                }
+                const detectionText = isAI ? 'AI' : '人工';
+                const detectionClass = isAI ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600';
+                
+                // 模拟同义词
+                const synonyms = getSynonyms(segment);
+                
+                let detectionHTML = `<p class="text-gray-800">`;
+                
+                if (synonyms.length > 0) {
+                    let processedSegment = escapeHTML(segment);
+                    synonyms.forEach((synonym, synIndex) => {
+                        const escapedWord = escapeHTML(synonym.word);
+                        const regex = new RegExp(escapedWord, 'g');
+                        processedSegment = processedSegment.replace(regex, `<span class="inline-flex items-center gap-1">${escapedWord}<span class="${detectionClass} px-2 py-0.5 rounded-full text-xs cursor-pointer hover:opacity-80" onclick="showSynonyms('${escapeHTML(synonym.word)}', ${index}, ${synIndex})"><i class="fa fa-arrow-right mr-1"></i>${detectionText}</span></span>`);
+                    });
+                    detectionHTML += processedSegment;
+                } else {
+                    detectionHTML += escapeHTML(segment) + `<span class="${detectionClass} px-2 py-0.5 rounded-full text-xs ml-2 cursor-pointer hover:opacity-80" onclick="showSynonyms('${escapeHTML(segment)}', ${index}, 0)"><i class="fa fa-arrow-right mr-1"></i>${detectionText}</span>`;
+                }
+                
+                detectionHTML += `</p>`;
+                
+                // 添加同义词选择区域
+                detectionHTML += `<div id="synonyms-${index}" class="hidden mt-2 p-2 bg-gray-50 rounded-lg"></div>`;
+                
+                detectionElement.innerHTML = detectionHTML;
+                detectionContent.appendChild(detectionElement);
+            });
+            
+            // 显示结果区域
+            if (showResults) {
+                document.getElementById('segment-results').classList.remove('hidden');
+            }
+        }
+        
+        // 获取同义词和形近词
+        function getSynonyms(text) {
+            // 增强版同义词数据（去重）
+            const synonymMap = {
+                '人工智能': ['AI', '智能系统', '机器学习', '智能技术', 'AI技术'],
+                '发展': ['进步', '演变', '成长', '进化', '进展', '发展趋势'],
+                '技术': ['科技', '技艺', '技能', '技术手段', '科技手段', '技术方法'],
+                '重要': ['关键', '重要性', '主要', '核心', '首要', '关键因素'],
+                '应用': ['使用', '运用', '应用场景', '实际应用', '应用领域', '应用范围'],
+                '研究': ['探索', '调查', '钻研', '研究工作', '科学研究', '研究探索'],
+                '分析': ['解析', '剖析', '研究', '分析研究', '分析报告', '分析结果'],
+                '方法': ['方式', '手段', '途径', '方法学', '方法手段', '方法途径'],
+                '问题': ['疑问', '难题', '议题', '问题解决', '问题分析', '问题探讨'],
+                '解决方案': ['解决办法', '应对策略', '处理方案', '解决措施', '应对方案'],
+                '登录': ['登入', '登进', '进入', '登录系统', '登录账号', '登录界面'],
+                '设置': ['配置', '设定', '选项', '系统设置', '设置选项', '配置设置'],
+                '隐私': ['私密', '个人信息', '保密', '隐私保护', '个人隐私', '隐私安全'],
+                '清除': ['清理', '删除', '移除', '清理清除', '清除删除', '移除清除'],
+                '数据': ['信息', '资料', '数据信息', '数据资料'],
+                '成功': ['胜利', '成就', '成功', '达成', '告成', '胜利'],
+                '失败': ['失利', '失败', '败北', '受挫', '失利', '失败'],
+                '坚持': ['坚持', '保持', '维持', '持续', '坚守', '坚持'],
+                '努力': ['努力', '勤奋', '尽力', '发奋', '用功', '努力'],
+                '学习': ['学习', '进修', '研习', '学习', '求学', '学习'],
+                '工作': ['工作', '职业', '任务', '工作', '职责', '工作'],
+                '生活': ['生活', '生存', '生计', '生活', '生涯', '生活'],
+                '健康': ['健康', '安康', '康健', '健康', '强健', '健康'],
+                '时间': ['时间', '时光', '光阴', '时间', '时刻', '时间'],
+                '管理': ['管理', '治理', '经营', '管理', '管控', '管理'],
+                '团队': ['团队', '团体', '队伍', '团队', '组织', '团队'],
+                '合作': ['合作', '协作', '配合', '合作', '协同', '合作'],
+                '创新': ['创新', '创造', '革新', '创新', '创意', '创新'],
+                '效率': ['效率', '效能', '效果', '效率', '效益', '效率'],
+                '质量': ['质量', '品质', '质素', '质量', '质地', '质量'],
+                '服务': ['服务', '效劳', '服务', '服务', '服务', '服务'],
+                '客户': ['客户', '顾客', '客户端', '客户', '客户', '客户'],
+                '市场': ['市场', '市集', '市场', '市场', '市场', '市场'],
+                '竞争': ['竞争', '竞赛', '竞争', '竞争', '竞争', '竞争'],
+                '策略': ['策略', '战略', '策略', '策略', '策略', '策略'],
+                '计划': ['计划', '规划', '计划', '计划', '计划', '计划'],
+                '执行': ['执行', '实行', '执行', '执行', '执行', '执行'],
+                '结果': ['结果', '成果', '结果', '结果', '结果', '结果'],
+                '目标': ['目标', '目的', '目标', '目标', '目标', '目标'],
+                '挑战': ['挑战', '挑衅', '挑战', '挑战', '挑战', '挑战'],
+                '机遇': ['机遇', '机会', '机遇', '机遇', '机遇', '机遇'],
+                '风险': ['风险', '危险', '风险', '风险', '风险', '风险'],
+                '投资': ['投资', '投入', '投资', '投资', '投资', '投资'],
+                '收益': ['收益', '回报', '收益', '收益', '收益', '收益'],
+                '成本': ['成本', '费用', '成本', '成本', '成本', '成本'],
+                '利润': ['利润', '收益', '利润', '利润', '利润', '利润'],
+                '销售': ['销售', '售卖', '销售', '销售', '销售', '销售'],
+                '营销': ['营销', '行销', '营销', '营销', '营销', '营销'],
+                '品牌': ['品牌', '牌子', '品牌', '品牌', '品牌', '品牌'],
+                '产品': ['产品', '产物', '产品', '产品', '产品', '产品'],
+                '技术': ['技术', '技能', '技术', '技术', '技术', '技术'],
+                '研发': ['研发', '研究', '研发', '研发', '研发', '研发'],
+                '生产': ['生产', '制造', '生产', '生产', '生产', '生产'],
+                '运营': ['运营', '运作', '运营', '运营', '运营', '运营'],
+                '管理': ['管理', '治理', '管理', '管理', '管理', '管理'],
+                '领导': ['领导', '带领', '领导', '领导', '领导', '领导'],
+                '员工': ['员工', '职员', '员工', '员工', '员工', '员工'],
+                '培训': ['培训', '培养', '培训', '培训', '培训', '培训'],
+                '发展': ['发展', '成长', '发展', '发展', '发展', '发展'],
+                '战略': ['战略', '策略', '战略', '战略', '战略', '战略'],
+                '规划': ['规划', '计划', '规划', '规划', '规划', '规划'],
+                '决策': ['决策', '决定', '决策', '决策', '决策', '决策'],
+                '沟通': ['沟通', '交流', '沟通', '沟通', '沟通', '沟通'],
+                '协作': ['协作', '合作', '协作', '协作', '协作', '协作'],
+                '创新': ['创新', '创造', '创新', '创新', '创新', '创新'],
+                '变革': ['变革', '改变', '变革', '变革', '变革', '变革'],
+                '适应': ['适应', '顺应', '适应', '适应', '适应', '适应'],
+                '学习': ['学习', '进修', '学习', '学习', '学习', '学习'],
+                '成长': ['成长', '发展', '成长', '成长', '成长', '成长'],
+                // 新增常用词汇
+                '要求': ['需求', '请求', '要求', '需要', '诉求', '要求'],
+                '输出': ['输出', '产出', '输出', '输出结果', '输出内容', '输出'],
+                '事实': ['事实', '实际', '事实', '真实情况', '实际情况', '事实'],
+                '现场': ['现场', '现场', '现场', '现场环境', '现场情况', '现场'],
+                '写作': ['写作', '撰写', '写作', '编写', '创作', '写作'],
+                '内容': ['内容', '内容', '内容', '内容', '内容', '内容'],
+                '要求': ['要求', '需求', '要求', '需要', '诉求', '要求'],
+                '比赛': ['比赛', '竞赛', '比赛', '赛事', '比赛', '比赛'],
+                '选手': ['选手', '参赛者', '选手', '参赛选手', '选手', '选手'],
+                '比分': ['比分', '分数', '比分', '比赛分数', '比分', '比分'],
+                '现场': ['现场', '现场', '现场', '现场环境', '现场情况', '现场'],
+                '记者': ['记者', '新闻工作者', '记者', '记者', '记者', '记者'],
+                '报道': ['报道', '新闻报道', '报道', '报道', '报道', '报道'],
+                '比赛': ['比赛', '竞赛', '比赛', '赛事', '比赛', '比赛'],
+                '结果': ['结果', '成果', '结果', '结果', '结果', '结果'],
+                '胜利': ['胜利', '成功', '胜利', '获胜', '胜利', '胜利'],
+                '失败': ['失败', '失利', '失败', '败北', '失败', '失败'],
+                '关键': ['关键', '重要', '关键', '核心', '关键', '关键'],
+                '事实': ['事实', '实际', '事实', '真实情况', '实际情况', '事实'],
+                '要求': ['要求', '需求', '要求', '需要', '诉求', '要求'],
+                '输出': ['输出', '产出', '输出', '输出结果', '输出内容', '输出'],
+                '文本': ['文本', '文字', '文本', '文本内容', '文本', '文本'],
+                '格式': ['格式', '形式', '格式', '格式', '格式', '格式'],
+                '字数': ['字数', '字數', '字数', '字数', '字数', '字数'],
+                '要求': ['要求', '需求', '要求', '需要', '诉求', '要求'],
+                '整体': ['整体', '整体', '整体', '整体', '整体', '整体'],
+                '现场': ['现场', '现场', '现场', '现场环境', '现场情况', '现场'],
+                '数据': ['数据', '信息', '数据', '数据信息', '数据资料', '数据']
+            };
+            
+            // 增强版形近词数据
+            const nearSynonymMap = {
+                '登录': ['登陆', '登路', '登錄'],
+                '设置': ['設置', '设制', '设汁'],
+                '隐私': ['隐思', '隐私', '隐寺'],
+                '清除': ['清处', '清出', '青除'],
+                '数据': ['数剧', '数居', '数距'],
+                '发展': ['發展', '发張', '发转'],
+                '技术': ['技述', '技木', '技求'],
+                '重要': ['重腰', '重咬', '重耀'],
+                '应用': ['应永', '应佣', '应硬'],
+                '研究': ['研九', '研就', '研旧'],
+                '分析': ['分西', '分晰', '分息'],
+                '方法': ['方发', '方砝', '方伐'],
+                '问题': ['问提', '问踢', '问体'],
+                '解决': ['解绝', '解觉', '解角'],
+                '成功': ['成攻', '成宫', '成巩'],
+                '失败': ['失拜', '失败', '失摆'],
+                '坚持': ['坚迟', '坚赤', '坚尺'],
+                '努力': ['努历', '努利', '努立'],
+                '学习': ['学西', '学希', '学息'],
+                '工作': ['工做', '工左', '工座'],
+                '生活': ['生货', '生或', '生祸'],
+                '健康': ['健慷', '健抗', '健炕'],
+                '时间': ['时见', '时键', '时践'],
+                '管理': ['管里', '管李', '管理'],
+                '团队': ['团堆', '团对', '团退'],
+                '合作': ['合做', '合座', '合左'],
+                '创新': ['创薪', '创欣', '创兴'],
+                '效率': ['效律', '效滤', '效绿'],
+                '质量': ['质亮', '质凉', '质梁'],
+                '服务': ['服物', '服雾', '服悟'],
+                '客户': ['客护', '客户', '客沪'],
+                '市场': ['市厂', '市场', '市肠'],
+                '竞争': ['竞挣', '竞整', '竞正'],
+                '策略': ['策路', '策咯', '策珞'],
+                '计划': ['计画', '计化', '计画'],
+                '执行': ['执形', '执刑', '执性'],
+                '结果': ['结裹', '结过', '结国'],
+                '目标': ['目表', '目膘', '目标'],
+                '挑战': ['挑站', '挑占', '挑沾'],
+                '机遇': ['机迂', '机与', '机余'],
+                '风险': ['风显', '风险', '风先'],
+                '投资': ['投咨', '投姿', '投次'],
+                '收益': ['收易', '收溢', '收益'],
+                '成本': ['成笨', '成奔', '成泵'],
+                '利润': ['利闰', '利轮', '利论'],
+                '销售': ['销受', '销兽', '销瘦'],
+                '营销': ['营消', '营小', '营笑'],
+                '品牌': ['品派', '品牌', '品白'],
+                '产品': ['产拼', '产频', '产平'],
+                '技术': ['技述', '技木', '技求'],
+                '研发': ['研法', '研罚', '研发'],
+                '生产': ['生铲', '生缠', '生产'],
+                '运营': ['运应', '运迎', '运盈'],
+                '管理': ['管里', '管李', '管理'],
+                '领导': ['领倒', '领岛', '领导'],
+                '员工': ['员公', '员攻', '员共'],
+                '培训': ['培新', '培信', '培兴'],
+                '发展': ['發展', '发張', '发转'],
+                '战略': ['战屡', '战绿', '战率'],
+                '规划': ['规化', '规画', '规话'],
+                '决策': ['决测', '决侧', '决册'],
+                '沟通': ['沟同', '沟通', '沟统'],
+                '协作': ['协做', '协座', '协左'],
+                '创新': ['创薪', '创欣', '创兴'],
+                '变革': ['变个', '变各', '变革'],
+                '适应': ['适印', '适因', '适音'],
+                '学习': ['学西', '学希', '学息'],
+                '成长': ['成涨', '成掌', '成丈']
+            };
+            
+            const synonyms = [];
+            
+            // 检查同义词
+            Object.keys(synonymMap).forEach(word => {
+                if (text.includes(word)) {
+                    synonyms.push({
+                        word: word,
+                        options: synonymMap[word],
+                        nearOptions: nearSynonymMap[word] || []
+                    });
+                }
+            });
+            
+            // 检查形近词
+            Object.keys(nearSynonymMap).forEach(word => {
+                if (text.includes(word)) {
+                    const existing = synonyms.find(item => item.word === word);
+                    if (!existing) {
+                        synonyms.push({
+                            word: word,
+                            options: [],
+                            nearOptions: nearSynonymMap[word]
+                        });
+                    }
+                }
+            });
+            
+            return synonyms;
+        }
+        
+        // 显示同义词选择
+        function showSynonyms(word, segmentIndex, synIndex) {
+            const containerId = `synonyms-${segmentIndex}`;
+            const container = document.getElementById(containerId);
+            
+            if (container) {
+                // 生成同义词选项
+                const synonymData = getSynonyms(word);
+                let synonymsHTML = '';
+                
+                if (synonymData.length > 0) {
+                    // 显示所有找到的同义词
+                    synonymData.forEach((data, index) => {
+                        if (data.options.length > 0) {
+                            synonymsHTML += '<div class="mb-3">';
+                            synonymsHTML += `<p class="text-sm font-medium text-gray-700 mb-2">"${data.word}"的同义词:</p>`;
+                            synonymsHTML += '<div class="flex flex-wrap gap-2">';
+                            
+                            data.options.forEach(synonym => {
+                                synonymsHTML += `<button class="px-3 py-1 bg-primary text-white rounded-full text-sm hover:bg-primary/90 transition-colors" onclick="replaceWord('${escapeHTML(data.word)}', '${escapeHTML(synonym)}', ${segmentIndex})">${synonym}</button>`;
+                            });
+                            
+                            synonymsHTML += '</div>';
+                            synonymsHTML += '</div>';
+                        }
+                    });
+                } else {
+                    // 如果没有找到同义词数据，生成一些通用同义词
+                    synonymsHTML += '<div class="mb-3">';
+                    synonymsHTML += '<p class="text-sm font-medium text-gray-700 mb-2">通用同义词:</p>';
+                    synonymsHTML += '<div class="flex flex-wrap gap-2">';
+                    
+                    // 生成一些通用同义词
+                    const commonSynonyms = ['内容', '文本', '文字', '信息', '资料', '数据'];
+                    commonSynonyms.forEach(synonym => {
+                        synonymsHTML += `<button class="px-3 py-1 bg-primary text-white rounded-full text-sm hover:bg-primary/90 transition-colors" onclick="replaceWord('${escapeHTML(word)}', '${escapeHTML(synonym)}', ${segmentIndex})">${synonym}</button>`;
+                    });
+                    
+                    synonymsHTML += '</div>';
+                    synonymsHTML += '</div>';
+                }
+                
+                container.innerHTML = synonymsHTML;
+                container.classList.toggle('hidden');
+            }
+        }
+        
+        // 替换单词
+        function replaceWord(oldWord, newWord, segmentIndex) {
+            const detectionContent = document.getElementById('detection-content');
+            const segmentElements = detectionContent.querySelectorAll('.p-3.bg-white.rounded-lg.shadow-sm');
+            const segmentContent = document.getElementById('segment-content');
+            
+            if (segmentElements[segmentIndex]) {
+                const segmentElement = segmentElements[segmentIndex];
+                let html = segmentElement.innerHTML;
+                
+                // 替换检测结果中的单词（考虑转义情况）
+                const escapedOldWord = escapeHTML(oldWord);
+                const regex = new RegExp(escapedOldWord, 'g');
+                html = html.replace(regex, newWord);
+                segmentElement.innerHTML = html;
+                
+                // 同时更新输入区域的内容
+                if (segmentContent) {
+                    let content = segmentContent.value;
+                    content = content.replace(new RegExp(oldWord, 'g'), newWord);
+                    segmentContent.value = content;
+                }
+                
+                // 隐藏同义词选择区域
+                const synonymContainers = segmentElement.querySelectorAll('[id^="synonyms-"]');
+                synonymContainers.forEach(container => {
+                    container.classList.add('hidden');
+                });
+            }
+        }
+        
+
+    </script>
+</body>
+</html>
